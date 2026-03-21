@@ -1,7 +1,44 @@
+import { useState } from 'react';
 import type { MaxDelayResponse } from '../../types/api';
 
 interface MaxDelayTableProps {
   data: MaxDelayResponse;
+}
+
+function EstimatedIcon({ className = '' }: { className?: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className={`relative inline-flex align-middle ${className}`}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={2}
+        stroke="currentColor"
+        className="h-4 w-4 cursor-help"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {/* Stopwatch body */}
+        <circle cx="12" cy="13" r="8" />
+        {/* Top button */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 5V2" />
+        {/* Top bar */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10 2h4" />
+        {/* Minute hand */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4l2.5 2.5" />
+        {/* Side button */}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18.5 7.5l1.5-1.5" />
+      </svg>
+      {open && (
+        <span className="absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-[10px] font-medium text-gray-300 shadow-lg ring-1 ring-white/10">
+          Estymowany
+        </span>
+      )}
+    </span>
+  );
 }
 
 function formatDelay(seconds: number): string {
@@ -108,7 +145,8 @@ export default function MaxDelayTable({ data }: MaxDelayTableProps) {
                   </div>
                 </td>
                 <td className="px-3 py-3 text-right">
-                  <span className={`font-bold ${delayColor(entry.delay_generated_seconds)}`}>
+                  <span className={`inline-flex items-center gap-1 whitespace-nowrap font-bold ${delayColor(entry.delay_generated_seconds)}`}>
+                    {entry.is_estimated && <EstimatedIcon />}
                     {formatDelay(entry.delay_generated_seconds)}
                   </span>
                 </td>
@@ -130,7 +168,8 @@ export default function MaxDelayTable({ data }: MaxDelayTableProps) {
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-gray-400">
                   {i + 1}
                 </span>
-                <span className={`text-lg font-black ${delayColor(entry.delay_generated_seconds)}`}>
+                <span className={`inline-flex items-center gap-1 text-lg font-black ${delayColor(entry.delay_generated_seconds)}`}>
+                  {entry.is_estimated && <EstimatedIcon />}
                   {formatDelay(entry.delay_generated_seconds)}
                 </span>
               </div>

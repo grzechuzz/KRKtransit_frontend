@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchVehiclePositions } from '../api/client';
 
-const POLLING_INTERVAL_MS = 2_000;
+const POLLING_INTERVAL_MS = 3_000;
 
 export function useVehicles() {
   return useQuery({

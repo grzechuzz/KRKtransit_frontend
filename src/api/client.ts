@@ -8,7 +8,9 @@ import type {
   TrendResponse,
 } from '../types/api';
 
-const BASE_URL = '/v1';
+const BASE_URL = import.meta.env.PROD
+  ? 'https://api.krktransit.pl/v1'
+  : '/v1';
 
 const ERROR_TRANSLATIONS: Record<string, string> = {
   'start_date must be <= end_date': 'Data początkowa musi być wcześniejsza lub równa dacie końcowej.',
@@ -67,12 +69,19 @@ export function fetchTripStops(tripId: string): Promise<TripStopsResponse> {
   return fetchJson<TripStopsResponse>(`${BASE_URL}/trips/${encodeURIComponent(tripId)}/stops`);
 }
 
+function statsParams(startDate: string, endDate: string, includeEstimated: boolean): URLSearchParams {
+  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  if (includeEstimated) params.set('include_estimated', 'true');
+  return params;
+}
+
 export function fetchPunctuality(
   lineNumber: string,
   startDate: string,
   endDate: string,
+  includeEstimated = false,
 ): Promise<PunctualityResponse> {
-  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<PunctualityResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/punctuality?${params}`,
   );
@@ -82,8 +91,9 @@ export function fetchMaxDelay(
   lineNumber: string,
   startDate: string,
   endDate: string,
+  includeEstimated = false,
 ): Promise<MaxDelayResponse> {
-  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<MaxDelayResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/max-delay?${params}`,
   );
@@ -93,8 +103,9 @@ export function fetchRouteDelay(
   lineNumber: string,
   startDate: string,
   endDate: string,
+  includeEstimated = false,
 ): Promise<RouteDelayResponse> {
-  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<RouteDelayResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/route-delay?${params}`,
   );
@@ -104,8 +115,9 @@ export function fetchTrend(
   lineNumber: string,
   startDate: string,
   endDate: string,
+  includeEstimated = false,
 ): Promise<TrendResponse> {
-  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<TrendResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/trend?${params}`,
   );

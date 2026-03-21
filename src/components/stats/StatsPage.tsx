@@ -7,8 +7,13 @@ import RouteDelayTable from './RouteDelayTable';
 import TrendChart from './TrendChart';
 
 function getDefaultDates() {
-  const today = new Date().toISOString().slice(0, 10);
-  return { start: today, end: today };
+  const today = new Date();
+  const weekAgo = new Date(today);
+  weekAgo.setDate(today.getDate() - 7);
+  return {
+    start: weekAgo.toISOString().slice(0, 10),
+    end: today.toISOString().slice(0, 10),
+  };
 }
 
 /* ── Tooltip Icon (click on mobile, hover on desktop) ── */
@@ -28,7 +33,7 @@ function TooltipIcon({ text }: { text: string }) {
         i
       </button>
       {open && (
-        <span className="absolute bottom-full left-0 mb-2 w-56 rounded-lg bg-gray-800 px-3 py-2 text-[11px] leading-relaxed text-gray-200 shadow-xl ring-1 ring-white/10 sm:left-1/2 sm:w-64 sm:-translate-x-1/2">
+        <span className="absolute bottom-full right-0 mb-2 w-56 rounded-lg bg-gray-800 px-3 py-2 text-[11px] leading-relaxed text-gray-200 shadow-xl ring-1 ring-white/10 sm:left-1/2 sm:right-auto sm:w-64 sm:-translate-x-1/2">
           {text}
         </span>
       )}
@@ -40,7 +45,7 @@ function TooltipIcon({ text }: { text: string }) {
 
 function SectionHeader({ title, subtitle, tooltip, badge }: { title: string; subtitle: string; tooltip?: string; badge?: string }) {
   return (
-    <div className="mb-8">
+    <div className="mb-5">
       <div className="flex items-center gap-3">
         <div className="w-1.5 self-stretch -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
         {badge && (
@@ -59,6 +64,58 @@ function SectionHeader({ title, subtitle, tooltip, badge }: { title: string; sub
   );
 }
 
+/* ── Collapsible "Jak to działa?" ────────────────────── */
+
+function MethodologyAccordion({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <section>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="group mb-6 w-full cursor-pointer text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-1.5 self-stretch -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
+          <h2 className="text-lg font-black uppercase tracking-wide text-white sm:text-xl">
+            Jak to działa?
+          </h2>
+          <svg
+            className={`h-5 w-5 shrink-0 text-gray-500 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+
+        {!open && (
+          <p className="mt-2.5 animate-blinker text-xs font-semibold tracking-wide text-blue-400 sm:text-sm">
+            Kliknij, aby rozwinąć
+          </p>
+        )}
+
+        {open && (
+          <p className="mt-2 text-xs text-gray-500 sm:text-sm">
+            Metodologia analizy danych
+          </p>
+        )}
+
+        <div className="mt-3 h-px bg-gradient-to-r from-blue-500/40 via-blue-500/10 to-transparent" />
+      </button>
+
+      <div
+        className={`grid transition-all duration-300 ease-in-out ${open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+      >
+        <div className="overflow-hidden">{children}</div>
+      </div>
+    </section>
+  );
+}
+
 /* ── Page ─────────────────────────────────────────────── */
 
 export default function StatsPage() {
@@ -66,10 +123,12 @@ export default function StatsPage() {
   const [lineInput, setLineInput] = useState('');
   const [startDate, setStartDate] = useState(defaults.start);
   const [endDate, setEndDate] = useState(defaults.end);
+  const [estimated, setEstimated] = useState(false);
   const [query, setQuery] = useState<{
     line: string;
     start: string;
     end: string;
+    estimated: boolean;
   } | null>(null);
 
   const canSubmit = lineInput.trim().length > 0 && startDate && endDate;
@@ -77,36 +136,36 @@ export default function StatsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    setQuery({ line: lineInput.trim(), start: startDate, end: endDate });
+    setQuery({ line: lineInput.trim(), start: startDate, end: endDate, estimated });
   };
 
   const punctuality = useQuery({
-    queryKey: ['punctuality', query?.line, query?.start, query?.end],
-    queryFn: () => fetchPunctuality(query!.line, query!.start, query!.end),
+    queryKey: ['punctuality', query?.line, query?.start, query?.end, query?.estimated],
+    queryFn: () => fetchPunctuality(query!.line, query!.start, query!.end, query!.estimated),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const maxDelay = useQuery({
-    queryKey: ['maxDelay', query?.line, query?.start, query?.end],
-    queryFn: () => fetchMaxDelay(query!.line, query!.start, query!.end),
+    queryKey: ['maxDelay', query?.line, query?.start, query?.end, query?.estimated],
+    queryFn: () => fetchMaxDelay(query!.line, query!.start, query!.end, query!.estimated),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const routeDelay = useQuery({
-    queryKey: ['routeDelay', query?.line, query?.start, query?.end],
-    queryFn: () => fetchRouteDelay(query!.line, query!.start, query!.end),
+    queryKey: ['routeDelay', query?.line, query?.start, query?.end, query?.estimated],
+    queryFn: () => fetchRouteDelay(query!.line, query!.start, query!.end, query!.estimated),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const trend = useQuery({
-    queryKey: ['trend', query?.line, query?.start, query?.end],
-    queryFn: () => fetchTrend(query!.line, query!.start, query!.end),
+    queryKey: ['trend', query?.line, query?.start, query?.end, query?.estimated],
+    queryFn: () => fetchTrend(query!.line, query!.start, query!.end, query!.estimated),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
@@ -119,7 +178,7 @@ export default function StatsPage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10">
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-20 sm:px-8 sm:py-10 sm:pb-10">
 
         {/* Hero search — shown when no results yet */}
         {!hasResults && (
@@ -129,12 +188,8 @@ export default function StatsPage() {
                 <h1 className="mb-1 text-center text-2xl font-black uppercase tracking-wide text-white sm:text-4xl">
                   Statystyki
                 </h1>
-                <p className="mb-8 text-center text-xs text-gray-500 sm:text-sm">
-                  Punktualność i opóźnienia dla wybranej linii
-                  <br />
-                  <span className="text-gray-600">
-                    Linie nocne zaliczają się do poprzedniego dnia serwisowego
-                  </span>
+                <p className="mb-8 text-center text-xs text-gray-600">
+                  Linie nocne zaliczają się do poprzedniego dnia serwisowego
                 </p>
 
                 <div className="space-y-4">
@@ -149,6 +204,7 @@ export default function StatsPage() {
                       onChange={(e) => setLineInput(e.target.value)}
                       placeholder="304"
                       maxLength={5}
+                      autoComplete="off"
                       className="h-14 w-full rounded-lg border border-white/10 bg-white/5 px-5 text-2xl font-black text-white placeholder-gray-700 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-3xl"
                     />
                   </div>
@@ -177,10 +233,45 @@ export default function StatsPage() {
                   </div>
                 </div>
 
+                <div className="mt-4">
+                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                    Estymacje
+                  </label>
+                <button
+                  type="button"
+                  onClick={() => setEstimated((v) => !v)}
+                  className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
+                    estimated
+                      ? 'border-blue-500/40 bg-white/5'
+                      : 'border-white/10 bg-white/5'
+                  }`}
+                >
+                  <div
+                    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+                      estimated ? 'bg-blue-500' : 'bg-gray-700'
+                    }`}
+                  >
+                    <div
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                        estimated ? 'translate-x-4' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <span className={`text-sm font-semibold ${estimated ? 'text-blue-400' : 'text-gray-400'}`}>
+                      Uwzględnij estymacje
+                    </span>
+                    <p className="text-[11px] text-gray-600">
+                      Dane estymowane — mogą być mniej dokładne niż potwierdzone odczyty. Dostępne od 19.03.2026.
+                    </p>
+                  </div>
+                </button>
+                </div>
+
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="group relative mt-6 block w-full -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none"
+                  className="group relative mt-4 block w-full -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none"
                 >
                   <span className="relative z-10 inline-block skew-x-12">Szukaj</span>
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
@@ -205,6 +296,7 @@ export default function StatsPage() {
                   onChange={(e) => setLineInput(e.target.value)}
                   placeholder="304"
                   maxLength={5}
+                  autoComplete="off"
                   className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-4 text-lg font-bold text-white placeholder-gray-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:w-28"
                 />
               </div>
@@ -236,10 +328,34 @@ export default function StatsPage() {
                 </div>
               </div>
 
+              {/* Estimation toggle — inline on desktop, own row on mobile */}
+              <label className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 select-none transition hover:bg-white/10 sm:shrink-0">
+                <div
+                  className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${
+                    estimated ? 'bg-blue-500' : 'bg-gray-600'
+                  }`}
+                >
+                  <div
+                    className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
+                      estimated ? 'translate-x-[14px]' : 'translate-x-[2px]'
+                    }`}
+                  />
+                </div>
+                <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-blue-400' : 'text-gray-500'}`}>
+                  Estymacje
+                </span>
+                <input
+                  type="checkbox"
+                  checked={estimated}
+                  onChange={() => setEstimated((v) => !v)}
+                  className="sr-only"
+                />
+              </label>
+
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="-skew-x-12 cursor-pointer rounded-sm bg-blue-600 px-6 py-2.5 text-sm font-bold uppercase tracking-widest text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 disabled:opacity-40 disabled:shadow-none"
+                className="h-11 -skew-x-12 cursor-pointer rounded-sm bg-blue-600 px-6 text-sm font-bold uppercase tracking-widest text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 disabled:opacity-40 disabled:shadow-none"
               >
                 <span className="inline-block skew-x-12">Szukaj</span>
               </button>
@@ -268,26 +384,21 @@ export default function StatsPage() {
 
         {/* Results */}
         {hasData && !isLoading && (
-          <div className="space-y-12 sm:space-y-16">
-            <section>
-              <SectionHeader title="Jak to działa?" subtitle="Metodologia analizy danych" />
+          <div className="space-y-8 sm:space-y-10">
+            <MethodologyAccordion>
               <dl className="space-y-3 text-sm">
                 {[
                   {
                     title: 'Analizujemy trasę od 2. do przedostatniego przystanku',
-                    text: 'Celowo pomijamy pętle początkowe i końcowe. Odczyty z pierwszych i ostatnich przystanków są często niemiarodajne (np. pojazd stoi na przerwie, a system już liczy opóźnienie), więc wyrzucamy je z analizy.',
+                    text: 'Odczyty z pierwszych i ostatnich przystanków są często niemiarodajne, więc wyrzucamy je z analizy.',
                   },
                   {
-                    title: 'Wymagamy twardego potwierdzenia (status STOPPED_AT)',
-                    text: 'Pod uwagę bierzemy wyłącznie te odczyty z danych GTFS Realtime, które posiadają jawny status STOPPED_AT. Mówiąc prościej: liczymy tylko te sytuacje, w których komputer w autobusie ze 100% pewnością zameldował: „potwierdzam, fizycznie zatrzymałem się na tym przystanku".',
+                    title: 'Priorytet dla potwierdzonych danych (status STOPPED_AT)',
+                    text: 'W pierwszej kolejności pod uwagę bierzemy odczyty z danych GTFS Realtime, które posiadają jawny status STOPPED_AT. Oznacza to, że w domyślnym widoku statystyk widoczne są tylko te sytuacje, w których system pokładowy pojazdu jednoznacznie potwierdził fizyczny postój na przystanku.',
                   },
                   {
-                    title: 'Nie zgadujemy, dlatego odrzucamy niepewne pomiary',
-                    text: 'Jeśli pojazd przejechał przez przystanek, ale nie wysłał twardego sygnału o zatrzymaniu, odrzucamy ten pomiar. Z tego powodu nasze statystyki mogą nie obejmować dużej części zrealizowanych kursów. Minusem jest również utrata danych z omijanych przystanków na żądanie. Mimo to wolimy pokazać mniejszą próbkę danych, niż opierać się na niepewnych założeniach.',
-                  },
-                  {
-                    title: 'Pracujemy nad własnymi estymacjami',
-                    text: 'Zależy nam na tym, aby docelowo uwzględniać w statystykach wszystkie odbyte kursy. Rozwijamy algorytmy, które pozwolą uzupełniać braki w danych, jednak na ten moment ich skuteczność nie spełnia naszych rygorystycznych oczekiwań. Nie chcemy fałszować rzeczywistości ani wprowadzać pasażerów w błąd, dlatego dopóki estymacje nie będą idealne, opieramy się wyłącznie na sprawdzonych faktach.',
+                    title: 'Opcjonalne estymacje',
+                    text: 'Przełącznik "Estymacje" pozwala dodatkowo uwzględnić przybliżone czasy oszacowane przez system w sytuacjach, gdy pojazd nie zarejestrował fizycznego zatrzymania. Estymacje przechodzą walidację, ale i tak mogą zawierać większy margines błędu niż dane bezpośrednie. Dane estymowane dostępne są od 19.03.2026.',
                   },
                 ].map((item) => (
                   <div key={item.title} className="flex gap-3">
@@ -299,7 +410,7 @@ export default function StatsPage() {
                   </div>
                 ))}
               </dl>
-            </section>
+            </MethodologyAccordion>
 
             <section>
               <SectionHeader
@@ -332,7 +443,7 @@ export default function StatsPage() {
               <section>
                 <SectionHeader
                   title="Trend opóźnień"
-                  subtitle="Średnie opóźnienie w minutach dla poszczególnych dni"
+                  subtitle="Średnie opóźnienie dla poszczególnych dni"
                 />
                 <TrendChart data={trend.data} />
               </section>

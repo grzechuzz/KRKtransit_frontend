@@ -111,20 +111,23 @@ export default function LineFilter({
 
       {isOpen && (
         <div className="mt-2 max-h-[60vh] w-72 overflow-y-auto rounded-xl bg-gray-900/95 p-3 shadow-2xl backdrop-blur-sm sm:w-80">
-          <div className="mb-2 flex gap-2">
+          <div className="mb-2 grid grid-cols-2 gap-1.5">
             <button
               onClick={onShowAll}
-              className="cursor-pointer rounded-lg bg-white/10 px-3 py-1 text-xs text-gray-300 transition hover:bg-white/20"
+              className="cursor-pointer rounded-lg bg-white/10 py-1.5 text-xs font-medium text-gray-300 transition hover:bg-white/20"
             >
               Wszystkie
             </button>
             <button
               onClick={onHideAll}
-              className="cursor-pointer rounded-lg bg-white/10 px-3 py-1 text-xs text-gray-300 transition hover:bg-white/20"
+              className="cursor-pointer rounded-lg bg-white/10 py-1.5 text-xs font-medium text-gray-300 transition hover:bg-white/20"
             >
               Odznacz
             </button>
           </div>
+
+          <div className="mb-2 border-t border-white/10" />
+
           <div className="grid grid-cols-5 gap-1.5">
             {sortedLines.map((line) => {
               const isActive = allActive || activeLines.has(line);

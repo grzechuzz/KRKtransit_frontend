@@ -1,7 +1,35 @@
+import { useState } from 'react';
 import type { RouteDelayResponse } from '../../types/api';
 
 interface RouteDelayTableProps {
   data: RouteDelayResponse;
+}
+
+function EstimatedIcon({ className = '' }: { className?: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className={`relative inline-flex align-middle ${className}`}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={2}
+        stroke="currentColor"
+        className="h-3.5 w-3.5 cursor-help"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {open && (
+        <span className="absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-[10px] font-medium text-gray-300 shadow-lg ring-1 ring-white/10">
+          Estymowany
+        </span>
+      )}
+    </span>
+  );
 }
 
 function formatDelay(seconds: number): string {
@@ -108,7 +136,8 @@ export default function RouteDelayTable({ data }: RouteDelayTableProps) {
                   </div>
                 </td>
                 <td className="px-3 py-3 text-right">
-                  <span className={`font-bold ${delayColor(entry.delay_generated_seconds)}`}>
+                  <span className={`inline-flex items-center gap-1 whitespace-nowrap font-bold ${delayColor(entry.delay_generated_seconds)}`}>
+                    {entry.is_estimated && <EstimatedIcon />}
                     {formatDelay(entry.delay_generated_seconds)}
                   </span>
                 </td>
@@ -130,7 +159,8 @@ export default function RouteDelayTable({ data }: RouteDelayTableProps) {
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-gray-400">
                   {i + 1}
                 </span>
-                <span className={`text-lg font-black ${delayColor(entry.delay_generated_seconds)}`}>
+                <span className={`inline-flex items-center gap-1 text-lg font-black ${delayColor(entry.delay_generated_seconds)}`}>
+                  {entry.is_estimated && <EstimatedIcon />}
                   {formatDelay(entry.delay_generated_seconds)}
                 </span>
               </div>

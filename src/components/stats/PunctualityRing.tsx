@@ -49,15 +49,15 @@ export default function PunctualityRing({ data }: PunctualityRingProps) {
 
   return (
     <div>
-      <div className="grid grid-cols-3 gap-3 sm:gap-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-6">
         {CATEGORIES.map((cat) => (
           <div
             key={cat.key}
-            className={`flex flex-col items-center rounded-2xl bg-gradient-to-b ${cat.gradientFrom} ${cat.gradientTo} p-4 ring-1 ${cat.ring} sm:p-6`}
+            className={`flex flex-col items-center rounded-2xl bg-gradient-to-b ${cat.gradientFrom} ${cat.gradientTo} p-2 ring-1 ${cat.ring} sm:p-6`}
           >
             {/* Circle */}
             <div
-              className="relative mb-3 flex h-24 w-24 items-center justify-center rounded-full sm:mb-4 sm:h-32 sm:w-32"
+              className="relative mb-2 flex h-18 w-18 items-center justify-center rounded-full sm:mb-4 sm:h-32 sm:w-32"
               style={{
                 background: `radial-gradient(circle at 30% 30%, ${cat.color}33, ${cat.color}0d)`,
                 boxShadow: `0 0 30px ${cat.color}1a`,
@@ -70,7 +70,7 @@ export default function PunctualityRing({ data }: PunctualityRingProps) {
               />
               {/* Value */}
               <span
-                className="text-xl font-black sm:text-3xl"
+                className="text-base font-black sm:text-3xl"
                 style={{ color: cat.color }}
               >
                 {values[cat.key].toFixed(1)}%

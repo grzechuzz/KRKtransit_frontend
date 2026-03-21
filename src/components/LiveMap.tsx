@@ -7,9 +7,15 @@ import TripStops from './TripStops';
 import VehiclePanel, { MobileVehicleBar } from './VehiclePanel';
 import LineFilter from './LineFilter';
 import type { Vehicle } from '../types/api';
+import L from 'leaflet';
 
 const KRAKOW_CENTER = { lat: 50.0647, lng: 19.945 } as const;
 const DEFAULT_ZOOM = 13;
+const MIN_ZOOM = 8;
+const MAX_BOUNDS = L.latLngBounds(
+  L.latLng(49.0, 18.5),
+  L.latLng(51.0, 21.5),
+);
 
 export default function LiveMap() {
   const { vehicles, isLoading, error } = useVehicleCache();
@@ -73,6 +79,9 @@ export default function LiveMap() {
         <MapContainer
           center={KRAKOW_CENTER}
           zoom={DEFAULT_ZOOM}
+          minZoom={MIN_ZOOM}
+          maxBounds={MAX_BOUNDS}
+          maxBoundsViscosity={1.0}
           className="h-full w-full"
           zoomControl={false}
         >

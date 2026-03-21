@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { Vehicle } from '../types/api';
 
 interface VehiclePanelProps {
@@ -5,15 +6,29 @@ interface VehiclePanelProps {
   onClose: () => void;
 }
 
-function formatTimestamp(iso: string): string {
-  return new Date(iso).toLocaleTimeString('pl-PL', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+function formatRelativeTime(iso: string): string {
+  const diff = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (diff < 60) return `${diff} sek temu`;
+  const min = Math.floor(diff / 60);
+  const sec = diff % 60;
+  return `${min} min ${sec} sek temu`;
+}
+
+function useRelativeTime(iso: string): string {
+  const [text, setText] = useState(() => formatRelativeTime(iso));
+
+  useEffect(() => {
+    setText(formatRelativeTime(iso));
+    const id = setInterval(() => setText(formatRelativeTime(iso)), 5000);
+    return () => clearInterval(id);
+  }, [iso]);
+
+  return text;
 }
 
 export function MobileVehicleBar({ vehicle, onClose }: VehiclePanelProps) {
+  const relTime = useRelativeTime(vehicle.timestamp);
+
   return (
     <div className="shrink-0 border-b border-white/5 bg-gray-900 px-3 py-2 sm:hidden">
       <div className="flex items-center gap-3">
@@ -23,7 +38,7 @@ export function MobileVehicleBar({ vehicle, onClose }: VehiclePanelProps) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold leading-tight text-white">{vehicle.headsign}</p>
           <p className="truncate text-xs text-gray-400">
-            {vehicle.license_plate} &middot; {formatTimestamp(vehicle.timestamp)}
+            {vehicle.license_plate} &middot; {relTime}
           </p>
         </div>
         <button
@@ -39,6 +54,8 @@ export function MobileVehicleBar({ vehicle, onClose }: VehiclePanelProps) {
 }
 
 export default function VehiclePanel({ vehicle, onClose }: VehiclePanelProps) {
+  const relTime = useRelativeTime(vehicle.timestamp);
+
   return (
     <div className="absolute top-4 right-4 z-[1000] hidden w-80 rounded-2xl bg-gray-900/95 p-5 text-white shadow-2xl backdrop-blur-sm sm:block">
       <button
@@ -61,7 +78,7 @@ export default function VehiclePanel({ vehicle, onClose }: VehiclePanelProps) {
 
       <div className="space-y-1.5 border-t border-white/10 pt-3 text-sm">
         <Row label="Pozycja" value={`${vehicle.latitude.toFixed(5)}, ${vehicle.longitude.toFixed(5)}`} />
-        <Row label="Aktualizacja" value={formatTimestamp(vehicle.timestamp)} />
+        <Row label="Aktualizacja" value={relTime} />
       </div>
     </div>
   );
@@ -71,7 +88,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2">
       <span className="text-gray-400">{label}</span>
-      <span className="truncate font-mono text-gray-200" title={value}>
+      <span className="truncate text-sm font-medium text-gray-300" title={value}>
         {value}
       </span>
     </div>

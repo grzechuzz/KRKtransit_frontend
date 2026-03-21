@@ -68,6 +68,7 @@ export interface MaxDelayEntry {
   delay_generated_seconds: number;
   headsign: string;
   service_date: string;
+  is_estimated: boolean;
 }
 
 export interface MaxDelayResponse {
@@ -93,6 +94,7 @@ export interface RouteDelayEntry {
   delay_generated_seconds: number;
   headsign: string;
   service_date: string;
+  is_estimated: boolean;
 }
 
 export interface RouteDelayResponse {
