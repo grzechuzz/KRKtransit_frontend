@@ -6,13 +6,20 @@ import MaxDelayTable from './MaxDelayTable';
 import RouteDelayTable from './RouteDelayTable';
 import TrendChart from './TrendChart';
 
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function getDefaultDates() {
   const today = new Date();
   const weekAgo = new Date(today);
   weekAgo.setDate(today.getDate() - 7);
   return {
-    start: weekAgo.toISOString().slice(0, 10),
-    end: today.toISOString().slice(0, 10),
+    start: localDateStr(weekAgo),
+    end: localDateStr(today),
   };
 }
 
@@ -285,7 +292,7 @@ export default function StatsPage() {
         {hasResults && (
           <form onSubmit={handleSubmit} className="mb-8 sm:mb-12">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 sm:flex-shrink-0">
                 <label htmlFor="line" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
                   Linia
                 </label>
@@ -301,8 +308,61 @@ export default function StatsPage() {
                 />
               </div>
 
-              <div className="flex flex-1 gap-3">
-                <div className="flex-1">
+              <div className="sm:hidden">
+                <label htmlFor="start-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Od
+                </label>
+                <input
+                  id="start-mobile"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-11 w-full min-w-0 max-w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition [-webkit-appearance:none] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                />
+              </div>
+              <div className="sm:hidden">
+                <label htmlFor="end-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Do
+                </label>
+                <input
+                  id="end-mobile"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-11 w-full min-w-0 max-w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition [-webkit-appearance:none] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                />
+              </div>
+              <div className="sm:hidden">
+                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Estymacje
+                </p>
+                <label htmlFor="estimated-mobile" className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 select-none transition hover:bg-white/10">
+                  <div
+                    className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${
+                      estimated ? 'bg-blue-500' : 'bg-gray-600'
+                    }`}
+                  >
+                    <div
+                      className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
+                        estimated ? 'translate-x-[14px]' : 'translate-x-[2px]'
+                      }`}
+                    />
+                  </div>
+                  <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-blue-400' : 'text-gray-500'}`}>
+                    Uwzględnij estymacje
+                  </span>
+                  <input
+                    id="estimated-mobile"
+                    type="checkbox"
+                    checked={estimated}
+                    onChange={() => setEstimated((v) => !v)}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+
+              <div className="hidden flex-1 grid-cols-2 gap-3 sm:grid">
+                <div>
                   <label htmlFor="start" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
                     Od
                   </label>
@@ -314,7 +374,7 @@ export default function StatsPage() {
                     className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
                   />
                 </div>
-                <div className="flex-1">
+                <div>
                   <label htmlFor="end" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
                     Do
                   </label>
@@ -328,8 +388,8 @@ export default function StatsPage() {
                 </div>
               </div>
 
-              {/* Estimation toggle — inline on desktop, own row on mobile */}
-              <label className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 select-none transition hover:bg-white/10 sm:shrink-0">
+              {/* Estimation toggle — desktop only (mobile version is in the grid above) */}
+              <label className="hidden h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 select-none transition hover:bg-white/10 sm:flex sm:shrink-0">
                 <div
                   className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${
                     estimated ? 'bg-blue-500' : 'bg-gray-600'
@@ -439,11 +499,11 @@ export default function StatsPage() {
               <RouteDelayTable data={routeDelay.data} />
             </section>
 
-            {trend.data.days.length >= 5 && (
+            {trend.data.days.length >= 2 && (
               <section>
                 <SectionHeader
                   title="Trend opóźnień"
-                  subtitle="Średnie opóźnienie dla poszczególnych dni"
+                  subtitle="Średnie opóźnienie według dnia tygodnia"
                 />
                 <TrendChart data={trend.data} />
               </section>

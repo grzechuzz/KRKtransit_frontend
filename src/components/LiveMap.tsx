@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 import { useVehicleCache } from '../hooks/useVehicleCache';
 import VehicleMarker from './VehicleMarker';
 import RouteShape from './RouteShape';
@@ -89,6 +89,7 @@ export default function LiveMap() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
+          <ZoomControl position="topright" />
 
           {currentSelected?.shape_id && (
             <RouteShape shapeId={currentSelected.shape_id} />
@@ -120,7 +121,7 @@ export default function LiveMap() {
           />
         </div>
 
-        <div className="absolute bottom-4 left-4 z-[1000] rounded-xl bg-gray-900/90 px-4 py-2 text-sm text-gray-300 backdrop-blur-sm">
+        <div className={`absolute bottom-4 left-4 z-[1000] rounded-xl bg-gray-900/90 px-4 py-2 text-sm text-gray-300 backdrop-blur-sm transition-opacity ${filterOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           {isLoading && !vehicles.length && 'Ładowanie pojazdów...'}
           {error && !vehicles.length && <span className="text-red-400">Błąd połączenia z API</span>}
           {vehicles.length > 0 && (
