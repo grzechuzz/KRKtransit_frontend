@@ -7,66 +7,208 @@ import type {
   RouteDelayResponse,
   TrendResponse,
 } from '../types/api';
+import { translations, type Language } from '../i18n-core';
 
 const BASE_URL = import.meta.env.PROD
   ? 'https://api.krktransit.pl/v1'
   : '/v1';
 
-const ERROR_TRANSLATIONS: Record<string, string> = {
-  'start_date must be <= end_date': 'Data początkowa musi być wcześniejsza lub równa dacie końcowej.',
-  'Date range cannot exceed 365 days': 'Zakres dat nie może przekraczać 365 dni.',
-  'end_date cannot be in the future': 'Data końcowa nie może być w przyszłości.',
-  'Internal server error': 'Wewnętrzny błąd serwera.',
-};
+const DEFAULT_LANGUAGE: Language = 'pl';
 
-function translateError(message: string): string {
-  if (ERROR_TRANSLATIONS[message]) return ERROR_TRANSLATIONS[message];
+export class ApiClientError extends Error {
+  readonly status: number | null;
+  readonly errorCode: string | null;
 
-  // Translate dynamic "Line X not found between ..." messages
+  constructor(message: string, status: number | null = null, errorCode: string | null = null) {
+    super(message);
+    this.name = 'ApiClientError';
+    this.status = status;
+    this.errorCode = errorCode;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function apiMessages(language: Language) {
+  return translations[language].api;
+}
+
+function translateError(message: string, language: Language): string {
+  const api = apiMessages(language);
+  const errorTranslations = api.errorTranslations as Record<string, string>;
+
+  if (errorTranslations[message]) return errorTranslations[message];
+
   const lineMatch = message.match(/^Line (.+) not found between (.+) and (.+)$/);
   if (lineMatch) {
-    return `Nie znaleziono danych dla linii ${lineMatch[1]} w okresie ${lineMatch[2]} – ${lineMatch[3]}.`;
+    return api.lineNotFoundBetween(lineMatch[1], lineMatch[2], lineMatch[3]);
+  }
+
+  const currentLineMatch = message.match(/^Line '(.+)' not found$/);
+  if (currentLineMatch) {
+    return api.lineNotFound(currentLineMatch[1]);
   }
 
   const shapeMatch = message.match(/^Shape '(.+)' not found$/);
-  if (shapeMatch) return `Nie znaleziono trasy '${shapeMatch[1]}'.`;
+  if (shapeMatch) return api.shapeNotFound(shapeMatch[1]);
 
   const tripMatch = message.match(/^Trip '(.+)' not found$/);
-  if (tripMatch) return `Nie znaleziono kursu '${tripMatch[1]}'.`;
+  if (tripMatch) return api.tripNotFound(tripMatch[1]);
 
   return message;
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    const detail = typeof body?.detail === 'string' ? body.detail : null;
+function fieldFromLoc(loc: unknown): string | null {
+  if (!Array.isArray(loc)) return null;
 
-    if (response.status === 404) {
-      throw new Error(detail ? translateError(detail) : 'Nie znaleziono danych — sprawdź numer linii.');
-    }
-    if (response.status === 422) {
-      throw new Error(detail ? translateError(detail) : 'Nieprawidłowe dane wejściowe — sprawdź zakres dat.');
-    }
-    if (response.status === 429) {
-      throw new Error('Zbyt wiele zapytań — poczekaj chwilę i spróbuj ponownie.');
-    }
-    throw new Error(detail ? translateError(detail) : `Błąd serwera (${response.status}). Spróbuj ponownie.`);
+  return loc
+    .map((part) => String(part))
+    .filter((part) => !['body', 'path', 'query'].includes(part))
+    .at(-1) ?? null;
+}
+
+function formatValidationIssue(issue: unknown, language: Language): string | null {
+  if (!isRecord(issue)) return null;
+
+  const api = apiMessages(language);
+  const field = fieldFromLoc(issue.loc);
+  const fieldLabels = api.fieldLabels as Record<string, string>;
+  const label = field ? fieldLabels[field] ?? field : null;
+  const msg = asString(issue.msg) ?? asString(issue.message);
+  const type = asString(issue.type);
+  const lowerMsg = msg?.toLowerCase() ?? '';
+
+  if (label && lowerMsg.includes('valid date')) {
+    return api.validDate(label);
   }
+
+  if (field === 'line_number' && lowerMsg.includes('string should match pattern')) {
+    return api.linePattern;
+  }
+
+  if ((field === 'shape_id' || field === 'trip_id') && label && lowerMsg.includes('string should match pattern')) {
+    return api.invalidFormat(label);
+  }
+
+  if (label && type?.includes('bool')) {
+    return api.boolValue(label);
+  }
+
+  if (label && lowerMsg.includes('at most')) {
+    return api.tooLong(label);
+  }
+
+  if (label && lowerMsg.includes('at least')) {
+    return api.required(label);
+  }
+
+  if (label) return `${label}: ${msg ? translateError(msg, language) : api.invalidValue}`;
+  if (msg) return translateError(msg, language);
+
+  return null;
+}
+
+function messageFromDetail(detail: unknown, language: Language): string | null {
+  const detailText = asString(detail);
+  if (detailText) return detailText;
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((issue) => formatValidationIssue(issue, language))
+      .filter((message): message is string => message !== null);
+
+    if (messages.length) return [...new Set(messages)].slice(0, 2).join(' ');
+  }
+
+  if (isRecord(detail)) {
+    return asString(detail.message) ?? asString(detail.msg);
+  }
+
+  return null;
+}
+
+async function readErrorBody(response: Response): Promise<unknown> {
+  const text = await response.text().catch(() => '');
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return { message: text };
+  }
+}
+
+function errorCodeFromBody(body: unknown): string | null {
+  if (!isRecord(body)) return null;
+  return asString(body.error_code) ?? asString(body.code);
+}
+
+function messageFromBody(body: unknown, language: Language): string | null {
+  if (!isRecord(body)) return null;
+  return asString(body.message) ?? messageFromDetail(body.detail, language);
+}
+
+function fallbackMessage(status: number, language: Language): string {
+  const api = apiMessages(language);
+  if (status === 404) return api.fallback404;
+  if (status === 422) return api.fallback422;
+  if (status === 429) return api.errorCodeTranslations.RATE_LIMIT_EXCEEDED;
+  if (status === 502 || status === 503 || status === 504) {
+    return api.errorCodeTranslations.EXTERNAL_SERVICE_ERROR;
+  }
+  if (status >= 500) return api.errorCodeTranslations.INTERNAL_ERROR;
+  return api.fallbackStatus(status);
+}
+
+function userMessage(rawMessage: string | null, errorCode: string | null, status: number, language: Language): string {
+  const errorCodeTranslations = apiMessages(language).errorCodeTranslations as Record<string, string>;
+  if (errorCode && errorCodeTranslations[errorCode]) return errorCodeTranslations[errorCode];
+  if (rawMessage) return translateError(rawMessage, language);
+  return fallbackMessage(status, language);
+}
+
+export function getErrorMessage(error: unknown, language: Language = DEFAULT_LANGUAGE, fallback?: string): string {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (typeof error === 'string' && error.trim()) return translateError(error, language);
+  return fallback ?? apiMessages(language).getDataFallback;
+}
+
+async function fetchJson<T>(url: string, language: Language = DEFAULT_LANGUAGE): Promise<T> {
+  let response: Response;
+
+  try {
+    response = await fetch(url);
+  } catch {
+    throw new ApiClientError(apiMessages(language).networkError);
+  }
+
+  if (!response.ok) {
+    const body = await readErrorBody(response);
+    const errorCode = errorCodeFromBody(body);
+    const message = userMessage(messageFromBody(body, language), errorCode, response.status, language);
+
+    throw new ApiClientError(message, response.status, errorCode);
+  }
+
   return response.json() as Promise<T>;
 }
 
-export function fetchVehiclePositions(): Promise<LiveVehicleResponse> {
-  return fetchJson<LiveVehicleResponse>(`${BASE_URL}/vehicles/positions`);
+export function fetchVehiclePositions(language: Language = DEFAULT_LANGUAGE): Promise<LiveVehicleResponse> {
+  return fetchJson<LiveVehicleResponse>(`${BASE_URL}/vehicles/positions`, language);
 }
 
-export function fetchShape(shapeId: string): Promise<ShapeResponse> {
-  return fetchJson<ShapeResponse>(`${BASE_URL}/shapes/${encodeURIComponent(shapeId)}`);
+export function fetchShape(shapeId: string, language: Language = DEFAULT_LANGUAGE): Promise<ShapeResponse> {
+  return fetchJson<ShapeResponse>(`${BASE_URL}/shapes/${encodeURIComponent(shapeId)}`, language);
 }
 
-export function fetchTripStops(tripId: string): Promise<TripStopsResponse> {
-  return fetchJson<TripStopsResponse>(`${BASE_URL}/trips/${encodeURIComponent(tripId)}/stops`);
+export function fetchTripStops(tripId: string, language: Language = DEFAULT_LANGUAGE): Promise<TripStopsResponse> {
+  return fetchJson<TripStopsResponse>(`${BASE_URL}/trips/${encodeURIComponent(tripId)}/stops`, language);
 }
 
 function statsParams(startDate: string, endDate: string, includeEstimated: boolean): URLSearchParams {
@@ -80,10 +222,12 @@ export function fetchPunctuality(
   startDate: string,
   endDate: string,
   includeEstimated = false,
+  language: Language = DEFAULT_LANGUAGE,
 ): Promise<PunctualityResponse> {
   const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<PunctualityResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/punctuality?${params}`,
+    language,
   );
 }
 
@@ -92,10 +236,12 @@ export function fetchMaxDelay(
   startDate: string,
   endDate: string,
   includeEstimated = false,
+  language: Language = DEFAULT_LANGUAGE,
 ): Promise<MaxDelayResponse> {
   const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<MaxDelayResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/max-delay?${params}`,
+    language,
   );
 }
 
@@ -104,10 +250,12 @@ export function fetchRouteDelay(
   startDate: string,
   endDate: string,
   includeEstimated = false,
+  language: Language = DEFAULT_LANGUAGE,
 ): Promise<RouteDelayResponse> {
   const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<RouteDelayResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/route-delay?${params}`,
+    language,
   );
 }
 
@@ -116,9 +264,11 @@ export function fetchTrend(
   startDate: string,
   endDate: string,
   includeEstimated = false,
+  language: Language = DEFAULT_LANGUAGE,
 ): Promise<TrendResponse> {
   const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<TrendResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/trend?${params}`,
+    language,
   );
 }

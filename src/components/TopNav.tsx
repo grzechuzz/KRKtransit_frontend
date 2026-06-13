@@ -1,31 +1,43 @@
 import { useState } from 'react';
 import type { Page } from '../types/pages';
+import { useI18n, type Language } from '../i18n-core';
 
 interface TopNavProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
 }
 
-const NAV_ITEMS: { page: Page; label: string }[] = [
-  { page: 'map', label: 'MAPA LIVE' },
-  { page: 'stats', label: 'STATYSTYKI' },
-  { page: 'info', label: 'INFORMACJE' },
-];
-
 export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const { language, setLanguage, t } = useI18n();
+
+  const navItems: { page: Page; label: string }[] = [
+    { page: 'map', label: t.nav.map },
+    { page: 'stats', label: t.nav.stats },
+    { page: 'info', label: t.nav.info },
+  ];
 
   const handleNavigate = (page: Page) => {
     onNavigate(page);
     setMobileMenuOpen(false);
+    setLanguageMenuOpen(false);
   };
+
+  const languageOptions: { language: Language; label: string; ariaLabel: string }[] = [
+    { language: 'pl', label: t.language.polish, ariaLabel: t.language.switchToPolish },
+    { language: 'en', label: t.language.english, ariaLabel: t.language.switchToEnglish },
+  ];
 
   return (
     <header className="relative z-[1100] shrink-0 bg-gray-950">
       <div className="flex h-14 items-center px-3 sm:h-16 sm:px-5">
         {/* Hamburger button - mobile only */}
         <button
-          onClick={() => setMobileMenuOpen((prev) => !prev)}
+          onClick={() => {
+            setLanguageMenuOpen(false);
+            setMobileMenuOpen((prev) => !prev);
+          }}
           className="mr-3 flex cursor-pointer items-center justify-center rounded-md p-1.5 text-gray-400 transition hover:bg-white/5 hover:text-white sm:hidden"
           aria-label="Menu"
         >
@@ -51,7 +63,7 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
 
         {/* Desktop navigation - skewed buttons */}
         <nav className="hidden items-center gap-1 sm:flex">
-          {NAV_ITEMS.map(({ page, label }) => {
+          {navItems.map(({ page, label }) => {
             const active = currentPage === page;
             return (
               <button
@@ -68,12 +80,60 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
             );
           })}
         </nav>
+
+        <div className="relative ml-auto shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setLanguageMenuOpen((prev) => !prev);
+            }}
+            aria-label={language === 'pl' ? t.language.switchToEnglish : t.language.switchToPolish}
+            aria-expanded={languageMenuOpen}
+            className={`flex h-9 w-11 cursor-pointer items-center justify-center rounded-xl border bg-gray-900/90 shadow-lg shadow-blue-950/30 ring-1 ring-white/5 transition hover:bg-white/10 sm:h-10 sm:w-12 ${
+              languageMenuOpen
+                ? 'border-blue-400 shadow-blue-500/15'
+                : 'border-blue-500/25'
+            }`}
+          >
+            <FlagIcon language={language} />
+          </button>
+
+          {languageMenuOpen && (
+            <div className="absolute right-0 top-full z-[1200] mt-2 flex flex-col gap-1 rounded-xl border border-blue-500/25 bg-gray-900/95 p-1 shadow-2xl shadow-blue-950/40 ring-1 ring-white/10 backdrop-blur-sm">
+              {languageOptions.map((option) => {
+                const active = language === option.language;
+                return (
+                  <button
+                    key={option.language}
+                    type="button"
+                    onClick={() => {
+                      setLanguage(option.language);
+                      setLanguageMenuOpen(false);
+                    }}
+                    aria-label={option.ariaLabel}
+                    aria-pressed={active}
+                    title={option.label}
+                    className={`flex h-9 w-11 cursor-pointer items-center justify-center rounded-lg transition sm:h-10 sm:w-12 ${
+                      active
+                        ? 'bg-blue-600/20 ring-2 ring-blue-400'
+                        : 'opacity-65 hover:bg-white/10 hover:opacity-100'
+                    }`}
+                  >
+                    <FlagIcon language={option.language} />
+                    <span className="sr-only">{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
         <nav className="flex flex-col gap-1 border-t border-white/5 bg-gray-950 px-3 py-2 sm:hidden">
-          {NAV_ITEMS.map(({ page, label }) => {
+          {navItems.map(({ page, label }) => {
             const active = currentPage === page;
             return (
               <button
@@ -95,5 +155,26 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
       {/* Bottom accent line */}
       <div className="h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
     </header>
+  );
+}
+
+function FlagIcon({ language }: { language: Language }) {
+  return (
+    <span className="block h-5 w-7 overflow-hidden rounded-[3px] bg-white shadow-sm ring-1 ring-black/40" aria-hidden="true">
+      {language === 'pl' ? (
+        <svg viewBox="0 0 28 20" className="h-full w-full" role="img">
+          <rect width="28" height="10" fill="#fff" />
+          <rect y="10" width="28" height="10" fill="#dc143c" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 60 40" className="h-full w-full" role="img">
+          <rect width="60" height="40" fill="#012169" />
+          <path d="M0 0l60 40M60 0L0 40" stroke="#fff" strokeWidth="8" />
+          <path d="M0 0l60 40M60 0L0 40" stroke="#c8102e" strokeWidth="4" />
+          <path d="M30 0v40M0 20h60" stroke="#fff" strokeWidth="13" />
+          <path d="M30 0v40M0 20h60" stroke="#c8102e" strokeWidth="8" />
+        </svg>
+      )}
+    </span>
   );
 }

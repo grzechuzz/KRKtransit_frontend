@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { MaxDelayResponse } from '../../types/api';
+import { formatSignedDelay } from './delayFormat';
+import { useI18n } from '../../i18n-core';
 
 interface MaxDelayTableProps {
   data: MaxDelayResponse;
@@ -7,6 +9,7 @@ interface MaxDelayTableProps {
 
 function EstimatedIcon({ className = '' }: { className?: string }) {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   return (
     <span className={`relative inline-flex align-middle ${className}`}>
@@ -34,21 +37,11 @@ function EstimatedIcon({ className = '' }: { className?: string }) {
       </svg>
       {open && (
         <span className="absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-[10px] font-medium text-gray-300 shadow-lg ring-1 ring-white/10">
-          Estymowany
+          {t.tables.estimated}
         </span>
       )}
     </span>
   );
-}
-
-function formatDelay(seconds: number): string {
-  const abs = Math.abs(seconds);
-  const m = Math.floor(abs / 60);
-  const s = abs % 60;
-  const value = s > 0 ? `${m} min ${s} sek` : `${m} min`;
-  if (seconds < 0) return `\u2212${value}`;
-  if (seconds === 0) return '0 min';
-  return `+${value}`;
 }
 
 function delayColor(seconds: number): string {
@@ -57,26 +50,28 @@ function delayColor(seconds: number): string {
   return seconds > 180 ? 'text-red-400' : 'text-yellow-400';
 }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, locale: string): string {
   const date = new Date(iso);
-  return date.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, locale: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+  return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
 }
 
-function formatRealDate(iso: string): string {
+function formatRealDate(iso: string, locale: string): string {
   const date = new Date(iso);
-  return date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' });
+  return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
 }
 
 export default function MaxDelayTable({ data }: MaxDelayTableProps) {
+  const { language, t, locale } = useI18n();
+
   if (!data.max_delay.length) {
     return (
       <p className="py-8 text-center text-sm text-gray-500">
-        Brak danych o opóźnieniach dla wybranego zakresu.
+        {t.tables.noDelayData}
       </p>
     );
   }
@@ -89,28 +84,28 @@ export default function MaxDelayTable({ data }: MaxDelayTableProps) {
           <thead>
             <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-gray-500">
               <th className="px-3 py-2.5">#</th>
-              <th className="px-3 py-2.5">Odcinek</th>
-              <th className="px-3 py-2.5">Kierunek</th>
-              <th className="px-3 py-2.5">Nr boczny</th>
+              <th className="px-3 py-2.5">{t.tables.segment}</th>
+              <th className="px-3 py-2.5">{t.tables.direction}</th>
+              <th className="px-3 py-2.5">{t.tables.vehicleNumber}</th>
               <th className="px-3 py-2.5">
-                <div>Data</div>
-                <div>serwisowa</div>
+                <div>{t.tables.serviceDateTop}</div>
+                <div>{t.tables.serviceDateBottom}</div>
               </th>
               <th className="px-3 py-2.5">
-                <div>Data</div>
-                <div>rzeczywista</div>
+                <div>{t.tables.actualDateTop}</div>
+                <div>{t.tables.actualDateBottom}</div>
               </th>
               <th className="px-3 py-2.5">
-                <div>Planowe</div>
-                <div>odjazdy</div>
+                <div>{t.tables.scheduledTop}</div>
+                <div>{t.tables.scheduledBottom}</div>
               </th>
               <th className="px-3 py-2.5">
-                <div>Rzeczywiste</div>
-                <div>odjazdy</div>
+                <div>{t.tables.actualTop}</div>
+                <div>{t.tables.actualBottom}</div>
               </th>
               <th className="px-3 py-2.5 text-right">
-                <div>Wygenerowane</div>
-                <div>opóźnienie</div>
+                <div>{t.tables.generatedTop}</div>
+                <div>{t.tables.generatedBottom}</div>
               </th>
             </tr>
           </thead>
@@ -128,26 +123,26 @@ export default function MaxDelayTable({ data }: MaxDelayTableProps) {
                 </td>
                 <td className="px-3 py-3 text-gray-400">{entry.headsign}</td>
                 <td className="px-3 py-3 font-mono text-gray-300">{entry.vehicle_number}</td>
-                <td className="px-3 py-3 text-gray-400">{formatDate(entry.service_date)}</td>
-                <td className="px-3 py-3 text-gray-400">{formatRealDate(entry.from_event_time)}</td>
+                <td className="px-3 py-3 text-gray-400">{formatDate(entry.service_date, locale)}</td>
+                <td className="px-3 py-3 text-gray-400">{formatRealDate(entry.from_event_time, locale)}</td>
                 <td className="px-3 py-3">
                   <div className="font-mono text-gray-400">
-                    {formatTime(entry.from_planned_time)}
+                    {formatTime(entry.from_planned_time, locale)}
                     <span className="mx-1 text-gray-700">&rarr;</span>
-                    {formatTime(entry.to_planned_time)}
+                    {formatTime(entry.to_planned_time, locale)}
                   </div>
                 </td>
                 <td className="px-3 py-3">
                   <div className="font-mono text-gray-300">
-                    {formatTime(entry.from_event_time)}
+                    {formatTime(entry.from_event_time, locale)}
                     <span className="mx-1 text-gray-700">&rarr;</span>
-                    {formatTime(entry.to_event_time)}
+                    {formatTime(entry.to_event_time, locale)}
                   </div>
                 </td>
                 <td className="px-3 py-3 text-right">
                   <span className={`inline-flex items-center gap-1 whitespace-nowrap font-bold ${delayColor(entry.delay_generated_seconds)}`}>
                     {entry.is_estimated && <EstimatedIcon />}
-                    {formatDelay(entry.delay_generated_seconds)}
+                    {formatSignedDelay(entry.delay_generated_seconds, language)}
                   </span>
                 </td>
               </tr>
@@ -170,7 +165,7 @@ export default function MaxDelayTable({ data }: MaxDelayTableProps) {
                 </span>
                 <span className={`inline-flex items-center gap-1 text-lg font-black ${delayColor(entry.delay_generated_seconds)}`}>
                   {entry.is_estimated && <EstimatedIcon />}
-                  {formatDelay(entry.delay_generated_seconds)}
+                  {formatSignedDelay(entry.delay_generated_seconds, language)}
                 </span>
               </div>
               <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-xs text-gray-400">
@@ -187,22 +182,22 @@ export default function MaxDelayTable({ data }: MaxDelayTableProps) {
             {/* Times */}
             <div className="mb-2 grid grid-cols-2 gap-2 rounded-lg bg-white/[0.03] px-2.5 py-2 text-xs">
               <div>
-                <span className="text-gray-600">Plan: </span>
+                <span className="text-gray-600">{t.tables.plannedShort}: </span>
                 <span className="font-mono text-gray-400">
-                  {formatTime(entry.from_planned_time)} &rarr; {formatTime(entry.to_planned_time)}
+                  {formatTime(entry.from_planned_time, locale)} &rarr; {formatTime(entry.to_planned_time, locale)}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Rzecz: </span>
+                <span className="text-gray-600">{t.tables.actualShort}: </span>
                 <span className="font-mono text-gray-300">
-                  {formatTime(entry.from_event_time)} &rarr; {formatTime(entry.to_event_time)}
+                  {formatTime(entry.from_event_time, locale)} &rarr; {formatTime(entry.to_event_time, locale)}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span>Serw: {formatDate(entry.service_date)}</span>
-              <span>Rzecz: {formatRealDate(entry.from_event_time)}</span>
+              <span>{t.tables.serviceShort}: {formatDate(entry.service_date, locale)}</span>
+              <span>{t.tables.actualShort}: {formatRealDate(entry.from_event_time, locale)}</span>
               <span className="text-gray-700">&middot;</span>
               <span>{entry.headsign}</span>
             </div>
@@ -211,7 +206,7 @@ export default function MaxDelayTable({ data }: MaxDelayTableProps) {
       </div>
 
       <p className="mt-4 text-xs text-gray-600">
-        Przeanalizowano {data.trips_analyzed.toLocaleString('pl-PL')} kursów
+        {t.tables.analyzedTrips(data.trips_analyzed.toLocaleString(locale))}
       </p>
     </div>
   );

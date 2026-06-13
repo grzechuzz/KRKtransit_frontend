@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend } from '../../api/client';
+import { fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend, getErrorMessage } from '../../api/client';
 import PunctualityRing from './PunctualityRing';
 import MaxDelayTable from './MaxDelayTable';
 import RouteDelayTable from './RouteDelayTable';
 import TrendChart from './TrendChart';
+import { useI18n } from '../../i18n-core';
 
 function localDateStr(d: Date): string {
   const y = d.getFullYear();
@@ -13,10 +14,18 @@ function localDateStr(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+const DEFAULT_STATS_RANGE_DAYS = 7;
+const MIN_STATS_DATE = '2026-03-11';
+
+function clampStatsDate(value: string): string {
+  if (!value) return value;
+  return value < MIN_STATS_DATE ? MIN_STATS_DATE : value;
+}
+
 function getDefaultDates() {
   const today = new Date();
   const weekAgo = new Date(today);
-  weekAgo.setDate(today.getDate() - 7);
+  weekAgo.setDate(today.getDate() - (DEFAULT_STATS_RANGE_DAYS - 1));
   return {
     start: localDateStr(weekAgo),
     end: localDateStr(today),
@@ -71,10 +80,32 @@ function SectionHeader({ title, subtitle, tooltip, badge }: { title: string; sub
   );
 }
 
-/* ── Collapsible "Jak to działa?" ────────────────────── */
+function SectionLoading() {
+  const { t } = useI18n();
+
+  return (
+    <div className="flex min-h-36 items-center justify-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] text-sm text-gray-500">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-700 border-t-blue-500" />
+      <span>{t.stats.loading}</span>
+    </div>
+  );
+}
+
+function SectionError({ error }: { error: unknown }) {
+  const { language } = useI18n();
+
+  return (
+    <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-red-400">
+      {getErrorMessage(error, language)}
+    </div>
+  );
+}
+
+/* ── Collapsible methodology ─────────────────────────── */
 
 function MethodologyAccordion({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   return (
     <section>
@@ -86,7 +117,7 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3">
           <div className="w-1.5 self-stretch -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
           <h2 className="text-lg font-black uppercase tracking-wide text-white sm:text-xl">
-            Jak to działa?
+            {t.stats.methodologyTitle}
           </h2>
           <svg
             className={`h-5 w-5 shrink-0 text-gray-500 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
@@ -101,13 +132,13 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
 
         {!open && (
           <p className="mt-2.5 animate-blinker text-xs font-semibold tracking-wide text-blue-400 sm:text-sm">
-            Kliknij, aby rozwinąć
+            {t.stats.expandMethodology}
           </p>
         )}
 
         {open && (
           <p className="mt-2 text-xs text-gray-500 sm:text-sm">
-            Metodologia analizy danych
+            {t.stats.methodologySubtitle}
           </p>
         )}
 
@@ -126,6 +157,7 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
 /* ── Page ─────────────────────────────────────────────── */
 
 export default function StatsPage() {
+  const { language, t } = useI18n();
   const defaults = getDefaultDates();
   const [lineInput, setLineInput] = useState('');
   const [startDate, setStartDate] = useState(defaults.start);
@@ -138,50 +170,67 @@ export default function StatsPage() {
     estimated: boolean;
   } | null>(null);
 
+  const handleStartDateChange = (value: string) => {
+    setStartDate(clampStatsDate(value));
+  };
+
+  const handleEndDateChange = (value: string) => {
+    setEndDate(clampStatsDate(value));
+  };
+
   const canSubmit = lineInput.trim().length > 0 && startDate && endDate;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     if (!canSubmit) return;
-    setQuery({ line: lineInput.trim(), start: startDate, end: endDate, estimated });
+    setQuery({
+      line: lineInput.trim(),
+      start: clampStatsDate(startDate),
+      end: clampStatsDate(endDate),
+      estimated,
+    });
   };
 
   const punctuality = useQuery({
-    queryKey: ['punctuality', query?.line, query?.start, query?.end, query?.estimated],
-    queryFn: () => fetchPunctuality(query!.line, query!.start, query!.end, query!.estimated),
+    queryKey: ['punctuality', query?.line, query?.start, query?.end, query?.estimated, language],
+    queryFn: () => fetchPunctuality(query!.line, query!.start, query!.end, query!.estimated, language),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const maxDelay = useQuery({
-    queryKey: ['maxDelay', query?.line, query?.start, query?.end, query?.estimated],
-    queryFn: () => fetchMaxDelay(query!.line, query!.start, query!.end, query!.estimated),
+    queryKey: ['maxDelay', query?.line, query?.start, query?.end, query?.estimated, language],
+    queryFn: () => fetchMaxDelay(query!.line, query!.start, query!.end, query!.estimated, language),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const routeDelay = useQuery({
-    queryKey: ['routeDelay', query?.line, query?.start, query?.end, query?.estimated],
-    queryFn: () => fetchRouteDelay(query!.line, query!.start, query!.end, query!.estimated),
+    queryKey: ['routeDelay', query?.line, query?.start, query?.end, query?.estimated, language],
+    queryFn: () => fetchRouteDelay(query!.line, query!.start, query!.end, query!.estimated, language),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const trend = useQuery({
-    queryKey: ['trend', query?.line, query?.start, query?.end, query?.estimated],
-    queryFn: () => fetchTrend(query!.line, query!.start, query!.end, query!.estimated),
+    queryKey: ['trend', query?.line, query?.start, query?.end, query?.estimated, language],
+    queryFn: () => fetchTrend(query!.line, query!.start, query!.end, query!.estimated, language),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
 
   const isLoading = punctuality.isLoading || maxDelay.isLoading || routeDelay.isLoading || trend.isLoading;
-  const hasError = punctuality.error || maxDelay.error || routeDelay.error || trend.error;
-  const hasData = punctuality.data && maxDelay.data && routeDelay.data && trend.data;
-  const hasResults = hasData || hasError || isLoading;
+  const firstError = punctuality.error || maxDelay.error || routeDelay.error || trend.error;
+  const hasError = Boolean(firstError);
+  const hasAnyData = Boolean(punctuality.data || maxDelay.data || routeDelay.data || trend.data);
+  const isInitialLoading = isLoading && !hasAnyData;
+  const hasResults = hasAnyData || hasError || isLoading;
+  const statsSubtitle = query ? t.stats.lineRange(query.line, query.start, query.end) : t.stats.selectedRange;
 
   return (
     <div className="h-full overflow-y-auto">
@@ -193,16 +242,16 @@ export default function StatsPage() {
             <form onSubmit={handleSubmit} className="w-full max-w-lg">
               <div className="rounded-2xl border border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent p-6 shadow-2xl sm:p-10">
                 <h1 className="mb-1 text-center text-2xl font-black uppercase tracking-wide text-white sm:text-4xl">
-                  Statystyki
+                  {t.stats.title}
                 </h1>
                 <p className="mb-8 text-center text-xs text-gray-600">
-                  Linie nocne zaliczają się do poprzedniego dnia serwisowego
+                  {t.stats.nightLinesNote}
                 </p>
 
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="line-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
-                      Numer linii
+                      {t.stats.lineNumber}
                     </label>
                     <input
                       id="line-hero"
@@ -218,14 +267,15 @@ export default function StatsPage() {
 
                   <div>
                     <label htmlFor="start-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
-                      Zakres dat
+                      {t.stats.dateRange}
                     </label>
                     <div className="flex items-center gap-2">
                       <input
                         id="start-hero"
                         type="date"
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        min={MIN_STATS_DATE}
+                        onChange={(e) => handleStartDateChange(e.target.value)}
                         className="h-11 min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
                       />
                       <span className="shrink-0 text-xs text-gray-600">—</span>
@@ -233,7 +283,8 @@ export default function StatsPage() {
                         id="end-hero"
                         type="date"
                         value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
+                        min={MIN_STATS_DATE}
+                        onChange={(e) => handleEndDateChange(e.target.value)}
                         className="h-11 min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
                       />
                     </div>
@@ -242,7 +293,7 @@ export default function StatsPage() {
 
                 <div className="mt-4">
                   <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
-                    Estymacje
+                    {t.stats.estimations}
                   </label>
                 <button
                   type="button"
@@ -266,10 +317,10 @@ export default function StatsPage() {
                   </div>
                   <div>
                     <span className={`text-sm font-semibold ${estimated ? 'text-blue-400' : 'text-gray-400'}`}>
-                      Uwzględnij estymacje
+                      {t.stats.includeEstimations}
                     </span>
                     <p className="text-[11px] text-gray-600">
-                      Dane estymowane — mogą być mniej dokładne niż potwierdzone odczyty. Dostępne od 19.03.2026.
+                      {t.stats.estimationsHelp}
                     </p>
                   </div>
                 </button>
@@ -280,7 +331,7 @@ export default function StatsPage() {
                   disabled={!canSubmit}
                   className="group relative mt-4 block w-full -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none"
                 >
-                  <span className="relative z-10 inline-block skew-x-12">Szukaj</span>
+                  <span className="relative z-10 inline-block skew-x-12">{t.stats.search}</span>
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
                 </button>
               </div>
@@ -294,7 +345,7 @@ export default function StatsPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
               <div className="flex-shrink-0 sm:flex-shrink-0">
                 <label htmlFor="line" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Linia
+                  {t.stats.line}
                 </label>
                 <input
                   id="line"
@@ -310,31 +361,33 @@ export default function StatsPage() {
 
               <div className="sm:hidden">
                 <label htmlFor="start-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Od
+                  {t.stats.from}
                 </label>
                 <input
                   id="start-mobile"
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  min={MIN_STATS_DATE}
+                  onChange={(e) => handleStartDateChange(e.target.value)}
                   className="h-11 w-full min-w-0 max-w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition [-webkit-appearance:none] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
                 />
               </div>
               <div className="sm:hidden">
                 <label htmlFor="end-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Do
+                  {t.stats.to}
                 </label>
                 <input
                   id="end-mobile"
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  min={MIN_STATS_DATE}
+                  onChange={(e) => handleEndDateChange(e.target.value)}
                   className="h-11 w-full min-w-0 max-w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition [-webkit-appearance:none] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
                 />
               </div>
               <div className="sm:hidden">
                 <p className="mb-1 text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Estymacje
+                  {t.stats.estimations}
                 </p>
                 <label htmlFor="estimated-mobile" className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 select-none transition hover:bg-white/10">
                   <div
@@ -349,7 +402,7 @@ export default function StatsPage() {
                     />
                   </div>
                   <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-blue-400' : 'text-gray-500'}`}>
-                    Uwzględnij estymacje
+                    {t.stats.includeEstimations}
                   </span>
                   <input
                     id="estimated-mobile"
@@ -364,25 +417,27 @@ export default function StatsPage() {
               <div className="hidden flex-1 grid-cols-2 gap-3 sm:grid">
                 <div>
                   <label htmlFor="start" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Od
+                    {t.stats.from}
                   </label>
                   <input
                     id="start"
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    min={MIN_STATS_DATE}
+                    onChange={(e) => handleStartDateChange(e.target.value)}
                     className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
                   />
                 </div>
                 <div>
                   <label htmlFor="end" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Do
+                    {t.stats.to}
                   </label>
                   <input
                     id="end"
                     type="date"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    min={MIN_STATS_DATE}
+                    onChange={(e) => handleEndDateChange(e.target.value)}
                     className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
                   />
                 </div>
@@ -402,7 +457,7 @@ export default function StatsPage() {
                   />
                 </div>
                 <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-blue-400' : 'text-gray-500'}`}>
-                  Estymacje
+                  {t.stats.estimations}
                 </span>
                 <input
                   type="checkbox"
@@ -417,50 +472,35 @@ export default function StatsPage() {
                 disabled={!canSubmit}
                 className="h-11 -skew-x-12 cursor-pointer rounded-sm bg-blue-600 px-6 text-sm font-bold uppercase tracking-widest text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 disabled:opacity-40 disabled:shadow-none"
               >
-                <span className="inline-block skew-x-12">Szukaj</span>
+                <span className="inline-block skew-x-12">{t.stats.search}</span>
               </button>
             </div>
             <p className="mt-2 text-center text-[11px] text-gray-600">
-              Linie nocne zaliczają się do poprzedniego dnia serwisowego
+              {t.stats.nightLinesNote}
             </p>
           </form>
         )}
 
         {/* Loading */}
-        {isLoading && (
+        {isInitialLoading && (
           <div className="flex items-center justify-center py-20">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-700 border-t-blue-500" />
           </div>
         )}
 
         {/* Error */}
-        {hasError && !isLoading && (
+        {hasError && !hasAnyData && !isLoading && (
           <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-red-400">
-            {(punctuality.error || maxDelay.error || routeDelay.error || trend.error) instanceof Error
-              ? (punctuality.error || maxDelay.error || routeDelay.error || trend.error)!.message
-              : 'Nie udało się pobrać danych.'}
+            {getErrorMessage(firstError, language)}
           </div>
         )}
 
         {/* Results */}
-        {hasData && !isLoading && (
+        {hasAnyData && (
           <div className="space-y-8 sm:space-y-10">
             <MethodologyAccordion>
               <dl className="space-y-3 text-sm">
-                {[
-                  {
-                    title: 'Analizujemy trasę od 2. do przedostatniego przystanku',
-                    text: 'Odczyty z pierwszych i ostatnich przystanków są często niemiarodajne, więc wyrzucamy je z analizy.',
-                  },
-                  {
-                    title: 'Priorytet dla potwierdzonych danych (status STOPPED_AT)',
-                    text: 'W pierwszej kolejności pod uwagę bierzemy odczyty z danych GTFS Realtime, które posiadają jawny status STOPPED_AT. Oznacza to, że w domyślnym widoku statystyk widoczne są tylko te sytuacje, w których system pokładowy pojazdu jednoznacznie potwierdził fizyczny postój na przystanku.',
-                  },
-                  {
-                    title: 'Opcjonalne estymacje',
-                    text: 'Przełącznik "Estymacje" pozwala dodatkowo uwzględnić przybliżone czasy oszacowane przez system w sytuacjach, gdy pojazd nie zarejestrował fizycznego zatrzymania. Estymacje przechodzą walidację, ale i tak mogą zawierać większy margines błędu niż dane bezpośrednie. Dane estymowane dostępne są od 19.03.2026.',
-                  },
-                ].map((item) => (
+                {t.stats.methodologyItems.map((item) => (
                   <div key={item.title} className="flex gap-3">
                     <div className="mt-1 h-3 w-3 shrink-0 rounded-full bg-blue-500 shadow-sm shadow-blue-500/40" />
                     <div>
@@ -474,40 +514,72 @@ export default function StatsPage() {
 
             <section>
               <SectionHeader
-                title="Punktualność"
-                subtitle={`Linia ${punctuality.data.line_number} \u00b7 ${punctuality.data.start_date} — ${punctuality.data.end_date}`}
-                tooltip="Jeden pomiar = pojedynczy odjazd z przystanku na trasie (bez przystanków początkowych i końcowych)"
+                title={t.stats.punctualityTitle}
+                subtitle={
+                  punctuality.data
+                    ? t.stats.lineRange(punctuality.data.line_number, punctuality.data.start_date, punctuality.data.end_date)
+                    : statsSubtitle
+                }
+                tooltip={t.stats.punctualityTooltip}
               />
-              <PunctualityRing data={punctuality.data} />
+              {punctuality.data ? (
+                <PunctualityRing data={punctuality.data} />
+              ) : punctuality.error ? (
+                <SectionError error={punctuality.error} />
+              ) : (
+                <SectionLoading />
+              )}
             </section>
 
             <section>
               <SectionHeader
                 badge="TOP 10"
-                title="Opóźnienia między przystankami"
-                subtitle="Największy przyrost opóźnienia między dwoma kolejnymi przystankami"
+                title={t.stats.betweenStopsTitle}
+                subtitle={t.stats.betweenStopsSubtitle}
               />
-              <MaxDelayTable data={maxDelay.data} />
+              {maxDelay.data ? (
+                <MaxDelayTable data={maxDelay.data} />
+              ) : maxDelay.error ? (
+                <SectionError error={maxDelay.error} />
+              ) : (
+                <SectionLoading />
+              )}
             </section>
 
             <section>
               <SectionHeader
                 badge="TOP 10"
-                title="Opóźnienia na całej trasie"
-                subtitle="Największy przyrost opóźnienia na całej trasie (od 2. do przedostatniego przystanku)"
+                title={t.stats.routeDelayTitle}
+                subtitle={t.stats.routeDelaySubtitle}
               />
-              <RouteDelayTable data={routeDelay.data} />
+              {routeDelay.data ? (
+                <RouteDelayTable data={routeDelay.data} />
+              ) : routeDelay.error ? (
+                <SectionError error={routeDelay.error} />
+              ) : (
+                <SectionLoading />
+              )}
             </section>
 
-            {trend.data.days.length >= 2 && (
-              <section>
-                <SectionHeader
-                  title="Trend opóźnień"
-                  subtitle="Średnie opóźnienie według dnia tygodnia"
-                />
-                <TrendChart data={trend.data} />
-              </section>
-            )}
+            <section>
+              <SectionHeader
+                title={t.stats.trendTitle}
+                subtitle={t.stats.trendSubtitle}
+              />
+              {trend.data ? (
+                trend.data.days.length >= 2 ? (
+                  <TrendChart data={trend.data} />
+                ) : (
+                  <p className="py-8 text-center text-sm text-gray-500">
+                    {t.stats.notEnoughTrendData}
+                  </p>
+                )
+              ) : trend.error ? (
+                <SectionError error={trend.error} />
+              ) : (
+                <SectionLoading />
+              )}
+            </section>
           </div>
         )}
       </div>

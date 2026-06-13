@@ -1,33 +1,42 @@
 import { useState, useEffect } from 'react';
 import type { Vehicle } from '../types/api';
+import { useI18n } from '../i18n-core';
 
 interface VehiclePanelProps {
   vehicle: Vehicle;
   onClose: () => void;
 }
 
-function formatRelativeTime(iso: string): string {
-  const diff = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-  if (diff < 60) return `${diff} sek temu`;
+function formatRelativeTime(
+  iso: string,
+  now: number,
+  labels: {
+    secondsAgo: (seconds: number) => string;
+    minutesAgo: (minutes: number, seconds: number) => string;
+  },
+): string {
+  const diff = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 1000));
+  if (diff < 60) return labels.secondsAgo(diff);
   const min = Math.floor(diff / 60);
   const sec = diff % 60;
-  return `${min} min ${sec} sek temu`;
+  return labels.minutesAgo(min, sec);
 }
 
 function useRelativeTime(iso: string): string {
-  const [text, setText] = useState(() => formatRelativeTime(iso));
+  const [now, setNow] = useState(() => Date.now());
+  const { t } = useI18n();
 
   useEffect(() => {
-    setText(formatRelativeTime(iso));
-    const id = setInterval(() => setText(formatRelativeTime(iso)), 5000);
+    const id = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(id);
-  }, [iso]);
+  }, []);
 
-  return text;
+  return formatRelativeTime(iso, now, t.vehiclePanel);
 }
 
 export function MobileVehicleBar({ vehicle, onClose }: VehiclePanelProps) {
   const relTime = useRelativeTime(vehicle.timestamp);
+  const { t } = useI18n();
 
   return (
     <div className="shrink-0 border-b border-white/5 bg-gray-900 px-3 py-2 sm:hidden">
@@ -44,7 +53,7 @@ export function MobileVehicleBar({ vehicle, onClose }: VehiclePanelProps) {
         <button
           onClick={onClose}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm text-gray-400 transition hover:bg-white/20 hover:text-white"
-          aria-label="Zamknij"
+          aria-label={t.vehiclePanel.close}
         >
           X
         </button>
@@ -55,13 +64,14 @@ export function MobileVehicleBar({ vehicle, onClose }: VehiclePanelProps) {
 
 export default function VehiclePanel({ vehicle, onClose }: VehiclePanelProps) {
   const relTime = useRelativeTime(vehicle.timestamp);
+  const { t } = useI18n();
 
   return (
     <div className="absolute top-4 right-4 z-[1000] hidden w-80 rounded-2xl bg-gray-900/95 p-5 text-white shadow-2xl backdrop-blur-sm sm:block">
       <button
         onClick={onClose}
         className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-sm text-gray-400 transition hover:bg-white/20 hover:text-white"
-        aria-label="Zamknij"
+        aria-label={t.vehiclePanel.close}
       >
         X
       </button>
@@ -77,8 +87,8 @@ export default function VehiclePanel({ vehicle, onClose }: VehiclePanelProps) {
       </div>
 
       <div className="space-y-1.5 border-t border-white/10 pt-3 text-sm">
-        <Row label="Pozycja" value={`${vehicle.latitude.toFixed(5)}, ${vehicle.longitude.toFixed(5)}`} />
-        <Row label="Aktualizacja" value={relTime} />
+        <Row label={t.vehiclePanel.position} value={`${vehicle.latitude.toFixed(5)}, ${vehicle.longitude.toFixed(5)}`} />
+        <Row label={t.vehiclePanel.updated} value={relTime} />
       </div>
     </div>
   );

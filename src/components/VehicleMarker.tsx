@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Marker } from 'react-leaflet';
 import L from 'leaflet';
-import { getLineColor } from './LineFilter';
+import { getLineColor } from './lineColors';
 import type { Vehicle } from '../types/api';
 
 interface VehicleMarkerProps {

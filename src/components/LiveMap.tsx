@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 import { useVehicleCache } from '../hooks/useVehicleCache';
+import { getErrorMessage } from '../api/client';
+import { useI18n } from '../i18n-core';
 import VehicleMarker from './VehicleMarker';
 import RouteShape from './RouteShape';
 import TripStops from './TripStops';
@@ -19,6 +21,7 @@ const MAX_BOUNDS = L.latLngBounds(
 
 export default function LiveMap() {
   const { vehicles, isLoading, error } = useVehicleCache();
+  const { language, t } = useI18n();
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [activeLines, setActiveLines] = useState<Set<string>>(new Set());
   const [filterOpen, setFilterOpen] = useState(false);
@@ -62,6 +65,7 @@ export default function LiveMap() {
     : isFiltering
       ? vehicles.filter((v) => activeLines.has(v.line_number))
       : vehicles;
+  const emptyErrorMessage = error && !vehicles.length ? getErrorMessage(error, language, t.map.apiConnectionError) : null;
 
   const currentSelected = selectedVehicle
     ? visibleVehicles.find((v) => v.trip_id === selectedVehicle.trip_id) ?? null
@@ -121,16 +125,16 @@ export default function LiveMap() {
           />
         </div>
 
-        <div className={`absolute bottom-4 left-4 z-[1000] rounded-xl bg-gray-900/90 px-4 py-2 text-sm text-gray-300 backdrop-blur-sm transition-opacity ${filterOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
-          {isLoading && !vehicles.length && 'Ładowanie pojazdów...'}
-          {error && !vehicles.length && <span className="text-red-400">Błąd połączenia z API</span>}
+        <div className={`absolute bottom-4 left-4 z-[1000] max-w-[calc(100vw-2rem)] rounded-xl bg-gray-900/90 px-4 py-2 text-sm text-gray-300 backdrop-blur-sm transition-opacity ${filterOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+          {isLoading && !vehicles.length && t.map.loadingVehicles}
+          {emptyErrorMessage && <span className="block max-w-sm text-red-400">{emptyErrorMessage}</span>}
           {vehicles.length > 0 && (
             <span>
               <span className="font-bold text-white">{visibleVehicles.length}</span>
               {visibleVehicles.length !== vehicles.length && (
                 <span className="text-gray-500">/{vehicles.length}</span>
               )}
-              {' '}pojazdów
+              {' '}{t.map.vehicles}
             </span>
           )}
         </div>

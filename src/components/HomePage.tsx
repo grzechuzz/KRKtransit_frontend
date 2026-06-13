@@ -1,10 +1,13 @@
 import type { Page } from '../types/pages';
+import { useI18n } from '../i18n-core';
 
 interface HomePageProps {
   onNavigate: (page: Page) => void;
 }
 
 export default function HomePage({ onNavigate }: HomePageProps) {
+  const { t } = useI18n();
+
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto px-4">
       <div className="w-full max-w-2xl py-12 text-center">
@@ -19,8 +22,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
         {/* Description */}
         <p className="mx-auto mb-12 max-w-lg text-lg leading-relaxed text-gray-300 sm:text-xl">
-          Śledź pojazdy komunikacji miejskiej w Krakowie w&nbsp;czasie rzeczywistym
-          i&nbsp;analizuj statystyki punktualności.
+          {t.home.description}
         </p>
 
         {/* CTA Buttons */}
@@ -29,7 +31,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             onClick={() => onNavigate('map')}
             className="group relative -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 w-52 py-4 text-center text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30"
           >
-            <span className="relative z-10 inline-block skew-x-12">Mapa live</span>
+            <span className="relative z-10 inline-block skew-x-12">{t.home.mapCta}</span>
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
           </button>
 
@@ -37,7 +39,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             onClick={() => onNavigate('stats')}
             className="group relative -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-white/5 w-52 py-4 text-center text-sm font-bold uppercase tracking-widest text-gray-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white"
           >
-            <span className="relative z-10 inline-block skew-x-12">Statystyki</span>
+            <span className="relative z-10 inline-block skew-x-12">{t.home.statsCta}</span>
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
           </button>
         </div>
@@ -45,4 +47,3 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     </div>
   );
 }
-

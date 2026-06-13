@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { TrendResponse, TrendDay } from '../../types/api';
+import { formatCompactDelay, formatDelay } from './delayFormat';
+import { useI18n } from '../../i18n-core';
 
 interface TrendChartProps {
   data: TrendResponse;
@@ -13,32 +15,17 @@ interface Bar {
   daysCount: number;
 }
 
-const WEEKDAY_LABELS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'] as const;
-
 function getWeekdayIndex(dateStr: string): number {
   const d = new Date(dateStr);
   // JS getDay(): 0=Sunday, we want 0=Monday
   return (d.getDay() + 6) % 7;
 }
 
-function formatDelay(seconds: number): string {
-  const totalSec = Math.round(seconds);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  if (min === 0) return `${sec} sek`;
-  return `${min} min ${sec} sek`;
-}
-
 function formatYLabel(seconds: number): string {
-  const totalSec = Math.round(seconds);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  if (min === 0) return `${sec}s`;
-  if (sec === 0) return `${min}m`;
-  return `${min}m ${sec}s`;
+  return formatCompactDelay(seconds);
 }
 
-function aggregateByWeekday(days: TrendDay[]): Bar[] {
+function aggregateByWeekday(days: TrendDay[], weekdayLabels: string[]): Bar[] {
   const buckets = new Map<number, TrendDay[]>();
 
   for (const day of days) {
@@ -64,7 +51,7 @@ function aggregateByWeekday(days: TrendDay[]): Bar[] {
         : 0;
 
     bars.push({
-      label: WEEKDAY_LABELS[i],
+      label: weekdayLabels[i],
       sublabel: chunk.length > 1 ? `×${chunk.length}` : '',
       value: weightedAvg,
       trips: totalTrips,
@@ -79,13 +66,14 @@ const GRID_LINES = 4;
 const CHART_HEIGHT = 220;
 
 export default function TrendChart({ data }: TrendChartProps) {
-  const bars = useMemo(() => aggregateByWeekday(data.days), [data.days]);
+  const { language, t, locale } = useI18n();
+  const bars = useMemo(() => aggregateByWeekday(data.days, t.trend.weekdays), [data.days, t.trend.weekdays]);
   const [activeBar, setActiveBar] = useState<number | null>(null);
 
   if (!bars.length) {
     return (
       <p className="py-8 text-center text-sm text-gray-500">
-        Brak danych o trendach dla wybranego zakresu.
+        {t.trend.noData}
       </p>
     );
   }
@@ -100,9 +88,9 @@ export default function TrendChart({ data }: TrendChartProps) {
       <div className="mb-2 flex h-8 items-center justify-center">
         {activeBar !== null && (
           <p className="rounded-lg bg-gray-800 px-3 py-1 text-xs ring-1 ring-white/10">
-            <span className="font-bold text-white">{formatDelay(bars[activeBar].value)}</span>
+            <span className="font-bold text-white">{formatDelay(bars[activeBar].value, language)}</span>
             <span className="mx-1.5 text-gray-600">|</span>
-            <span className="text-gray-400">{bars[activeBar].trips.toLocaleString('pl-PL')} kursów</span>
+            <span className="text-gray-400">{t.trend.trips(bars[activeBar].trips.toLocaleString(locale))}</span>
           </p>
         )}
       </div>
@@ -185,7 +173,7 @@ export default function TrendChart({ data }: TrendChartProps) {
       </div>
 
       <p className="mt-3 text-center text-[10px] text-gray-600 sm:text-xs">
-        Średnie opóźnienie według dnia tygodnia na podstawie {data.days.length} dni
+        {t.trend.footer(data.days.length)}
       </p>
     </div>
   );
