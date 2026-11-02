@@ -61,8 +61,8 @@ export default function LineFilter({
   const allActive = activeLines.size === 0;
 
   return (
-    <div className="absolute top-4 left-4 z-[1000]">
-      <div className="flex gap-2">
+    <div className="absolute top-4 left-4 z-[1000] flex max-h-[45%] flex-col sm:max-h-none">
+      <div className="flex shrink-0 gap-2">
         <button
           onClick={() => {
             setLegendOpen(false);
@@ -97,8 +97,8 @@ export default function LineFilter({
       </div>
 
       {isOpen && (
-        <div className="mt-2 max-h-[60vh] w-72 overflow-y-auto rounded-xl bg-gray-900/95 p-3 shadow-2xl backdrop-blur-sm sm:w-80">
-          <div className="mb-2 grid grid-cols-2 gap-1.5">
+        <div className="mt-2 flex min-h-0 w-72 flex-col overflow-hidden rounded-xl bg-gray-900/95 p-3 shadow-2xl backdrop-blur-sm sm:max-h-[60vh] sm:w-80">
+          <div className="mb-2 grid shrink-0 grid-cols-2 gap-1.5 border-b border-white/10 pb-2">
             <button
               onClick={onShowAll}
               className="cursor-pointer rounded-lg bg-white/10 py-1.5 text-xs font-medium text-gray-300 transition hover:bg-white/20"
@@ -113,9 +113,7 @@ export default function LineFilter({
             </button>
           </div>
 
-          <div className="mb-2 border-t border-white/10" />
-
-          <div className="grid grid-cols-5 gap-1.5">
+          <div className="grid min-h-0 grid-cols-5 gap-1.5 overflow-y-auto overscroll-contain">
             {sortedLines.map((line) => {
               const isActive = allActive || activeLines.has(line);
               const color = getLineColor(line);
