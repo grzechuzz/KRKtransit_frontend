@@ -23,6 +23,11 @@ Dane mapy i statystyk wymagają połączenia z API.
 
 ## Sprawdzenie zmian
 
+Widoki mają osobne adresy: `/#/map`, `/#/stats` i `/#/about`.
+Odświeżenie zachowuje wybrany widok; działają też przyciski Wstecz/Dalej
+oraz bezpośrednie linki. Nawigacja używa fragmentu `#`, więc nie wymaga
+dodatkowej konfiguracji hostingu.
+
 ```bash
 npm run lint
 npm run build
