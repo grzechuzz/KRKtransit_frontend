@@ -13,14 +13,14 @@ async function fetchCachedVehiclePositions(language: Language): Promise<LiveVehi
   const now = Date.now();
 
   for (const vehicle of data.vehicles) {
-    vehicleCache.set(vehicle.trip_id, vehicle);
+    vehicleCache.set(vehicle.license_plate, vehicle);
   }
 
   const vehicles: Vehicle[] = [];
-  for (const [tripId, vehicle] of vehicleCache) {
+  for (const [licensePlate, vehicle] of vehicleCache) {
     const age = now - new Date(vehicle.timestamp).getTime();
     if (age > STALE_THRESHOLD_MS) {
-      vehicleCache.delete(tripId);
+      vehicleCache.delete(licensePlate);
     } else {
       vehicles.push(vehicle);
     }
