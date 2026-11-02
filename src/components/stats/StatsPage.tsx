@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend, getErrorMessage } from '../../api/client';
 import PunctualityRing from './PunctualityRing';
@@ -153,8 +153,8 @@ function SectionLoading() {
   const { t } = useI18n();
 
   return (
-    <div className="flex min-h-36 items-center justify-center gap-3 rounded-xl border border-overlay/5 bg-overlay/[0.02] text-sm text-subtle">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-control border-t-blue-500" />
+    <div role="status" className="flex min-h-36 items-center justify-center gap-3 rounded-xl border border-overlay/5 bg-overlay/[0.02] text-sm text-subtle">
+      <div aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-control border-t-blue-500 motion-reduce:animate-none" />
       <span>{t.stats.loading}</span>
     </div>
   );
@@ -233,12 +233,16 @@ export default function StatsPage() {
   const [startDate, setStartDate] = useState(defaults.start);
   const [endDate, setEndDate] = useState(defaults.end);
   const [estimated, setEstimated] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState<{
     line: string;
     start: string;
     end: string;
     estimated: boolean;
   } | null>(null);
+
+  const scrolledQueryRef = useRef<typeof query>(null);
 
   const handleStartDateChange = (value: string) => {
     setStartDate(clampStatsDate(value, maxStatsDate));
@@ -299,364 +303,239 @@ export default function StatsPage() {
   const hasError = Boolean(firstError);
   const hasAnyData = Boolean(punctuality.data || maxDelay.data || routeDelay.data || trend.data);
   const isInitialLoading = isLoading && !hasAnyData;
-  const hasResults = hasAnyData || hasError || isLoading;
+
+  useEffect(() => {
+    // Wait for real data: empty/error responses keep the user at the form.
+    if (!query || !hasAnyData || scrolledQueryRef.current === query) return;
+    const results = resultsRef.current;
+    const container = scrollContainerRef.current;
+    if (!results || !container) return;
+
+    scrolledQueryRef.current = query;
+    const top = container.scrollTop
+      + results.getBoundingClientRect().top
+      - container.getBoundingClientRect().top
+      - 24;
+    results.focus({ preventScroll: true });
+    container.scrollTo({
+      top: Math.max(0, top),
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+    });
+  }, [query, hasAnyData]);
   const lineRangeSubtitle = (line: string, start: string, end: string) => (
     t.stats.lineRange(line, formatDateLabel(start, locale), formatDateLabel(end, locale))
   );
   const statsSubtitle = query ? lineRangeSubtitle(query.line, query.start, query.end) : t.stats.selectedRange;
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div ref={scrollContainerRef} className="h-full overflow-y-auto">
       <div className="mx-auto max-w-7xl px-4 py-6 pb-20 sm:px-8 sm:py-10 sm:pb-10">
 
-        {/* Hero search — shown when no results yet */}
-        {!hasResults && (
-          <div className="flex min-h-[60vh] flex-col items-center justify-center">
-            <form onSubmit={handleSubmit} className="w-full max-w-lg">
-              <div className="rounded-2xl border border-overlay/5 bg-gradient-to-b from-overlay/[0.04] to-transparent p-6 shadow-panel sm:p-10">
-                <h1 className="mb-1 text-center text-2xl font-black uppercase tracking-wide text-ink sm:text-4xl">
-                  {t.stats.title}
-                </h1>
-                <p className="mb-8 text-center text-xs text-subtle">
-                  {t.stats.nightLinesNote}
-                </p>
+        {/* Search stays above the results. */}
+        <div className="flex min-h-[60vh] flex-col items-center justify-center">
+          <form onSubmit={handleSubmit} className="w-full max-w-lg">
+            <div className="rounded-2xl border border-overlay/5 bg-gradient-to-b from-overlay/[0.04] to-transparent p-6 shadow-panel sm:p-10">
+              <h1 className="mb-1 text-center text-2xl font-black uppercase tracking-wide text-ink sm:text-4xl">
+                {t.stats.title}
+              </h1>
+              <p className="mb-8 text-center text-xs text-subtle">
+                {t.stats.nightLinesNote}
+              </p>
 
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="line-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
-                      {t.stats.lineNumber}
-                    </label>
-                    <input
-                      id="line-hero"
-                      type="text"
-                      value={lineInput}
-                      onChange={(e) => setLineInput(e.target.value)}
-                      placeholder="304"
-                      maxLength={5}
-                      autoComplete="off"
-                      className="h-14 w-full rounded-lg border border-overlay/10 bg-overlay/5 px-5 text-2xl font-black text-ink placeholder-subtle outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-3xl"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="start-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
-                      {t.stats.dateRange}
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <LocalizedDateInput
-                        id="start-hero"
-                        value={startDate}
-                        min={MIN_STATS_DATE}
-                        max={maxStatsDate}
-                        onChange={handleStartDateChange}
-                        className="h-11 min-w-0 flex-1"
-                      />
-                      <span className="shrink-0 text-xs text-subtle">—</span>
-                      <LocalizedDateInput
-                        id="end-hero"
-                        value={endDate}
-                        min={MIN_STATS_DATE}
-                        max={maxStatsDate}
-                        onChange={handleEndDateChange}
-                        className="h-11 min-w-0 flex-1"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
-                    {t.stats.estimations}
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="line-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
+                    {t.stats.lineNumber}
                   </label>
-                <button
-                  type="button"
-                  onClick={() => setEstimated((v) => !v)}
-                  className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
-                    estimated
-                      ? 'border-blue-500/40 bg-overlay/5'
-                      : 'border-overlay/10 bg-overlay/5'
-                  }`}
-                >
-                  <div
-                    className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-                      estimated ? 'bg-blue-500' : 'bg-control'
-                    }`}
-                  >
-                    <div
-                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                        estimated ? 'translate-x-4' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <span className={`text-sm font-semibold ${estimated ? 'text-accent' : 'text-muted'}`}>
-                      {t.stats.includeEstimations}
-                    </span>
-                    <p className="text-[11px] text-subtle">
-                      {t.stats.estimationsHelp}
-                    </p>
-                  </div>
-                </button>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  className="group relative mt-4 block w-full -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none"
-                >
-                  <span className="relative z-10 inline-block skew-x-12">{t.stats.search}</span>
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-overlay/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Compact search bar — shown when results are loaded */}
-        {hasResults && (
-          <form onSubmit={handleSubmit} className="mb-8 sm:mb-12">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-              <div className="flex-shrink-0 sm:flex-shrink-0">
-                <label htmlFor="line" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
-                  {t.stats.line}
-                </label>
-                <input
-                  id="line"
-                  type="text"
-                  value={lineInput}
-                  onChange={(e) => setLineInput(e.target.value)}
-                  placeholder="304"
-                  maxLength={5}
-                  autoComplete="off"
-                  className="h-11 w-full rounded-lg border border-overlay/10 bg-overlay/5 px-4 text-lg font-bold text-ink placeholder-subtle outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:w-28"
-                />
-              </div>
-
-              <div className="sm:hidden">
-                <label htmlFor="start-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
-                  {t.stats.from}
-                </label>
-                <LocalizedDateInput
-                  id="start-mobile"
-                  value={startDate}
-                  min={MIN_STATS_DATE}
-                  max={maxStatsDate}
-                  onChange={handleStartDateChange}
-                  className="h-11 w-full min-w-0 max-w-full"
-                />
-              </div>
-              <div className="sm:hidden">
-                <label htmlFor="end-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
-                  {t.stats.to}
-                </label>
-                <LocalizedDateInput
-                  id="end-mobile"
-                  value={endDate}
-                  min={MIN_STATS_DATE}
-                  max={maxStatsDate}
-                  onChange={handleEndDateChange}
-                  className="h-11 w-full min-w-0 max-w-full"
-                />
-              </div>
-              <div className="sm:hidden">
-                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-subtle">
-                  {t.stats.estimations}
-                </p>
-                <label htmlFor="estimated-mobile" className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-overlay/10 bg-overlay/5 px-3 select-none transition hover:bg-overlay/10">
-                  <div
-                    className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${
-                      estimated ? 'bg-blue-500' : 'bg-control'
-                    }`}
-                  >
-                    <div
-                      className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
-                        estimated ? 'translate-x-[14px]' : 'translate-x-[2px]'
-                      }`}
-                    />
-                  </div>
-                  <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-accent' : 'text-subtle'}`}>
-                    {t.stats.includeEstimations}
-                  </span>
                   <input
-                    id="estimated-mobile"
-                    type="checkbox"
-                    checked={estimated}
-                    onChange={() => setEstimated((v) => !v)}
-                    className="sr-only"
+                    id="line-hero"
+                    type="text"
+                    value={lineInput}
+                    onChange={(e) => setLineInput(e.target.value)}
+                    placeholder="304"
+                    maxLength={5}
+                    autoComplete="off"
+                    className="h-14 w-full rounded-lg border border-overlay/10 bg-overlay/5 px-5 text-2xl font-black text-ink placeholder-subtle outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-3xl"
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="start-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
+                    {t.stats.dateRange}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <LocalizedDateInput
+                      id="start-hero"
+                      value={startDate}
+                      min={MIN_STATS_DATE}
+                      max={maxStatsDate}
+                      onChange={handleStartDateChange}
+                      className="h-11 min-w-0 flex-1"
+                    />
+                    <span className="shrink-0 text-xs text-subtle">—</span>
+                    <LocalizedDateInput
+                      id="end-hero"
+                      value={endDate}
+                      min={MIN_STATS_DATE}
+                      max={maxStatsDate}
+                      onChange={handleEndDateChange}
+                      className="h-11 min-w-0 flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
+                  {t.stats.estimations}
                 </label>
-              </div>
-
-              <div className="hidden flex-1 grid-cols-2 gap-3 sm:grid">
-                <div>
-                  <label htmlFor="start" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
-                    {t.stats.from}
-                  </label>
-                  <LocalizedDateInput
-                    id="start"
-                    value={startDate}
-                    min={MIN_STATS_DATE}
-                    max={maxStatsDate}
-                    onChange={handleStartDateChange}
-                    className="h-11 w-full"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="end" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
-                    {t.stats.to}
-                  </label>
-                  <LocalizedDateInput
-                    id="end"
-                    value={endDate}
-                    min={MIN_STATS_DATE}
-                    max={maxStatsDate}
-                    onChange={handleEndDateChange}
-                    className="h-11 w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Estimation toggle — desktop only (mobile version is in the grid above) */}
-              <label className="hidden h-11 cursor-pointer items-center gap-2 rounded-lg border border-overlay/10 bg-overlay/5 px-3 select-none transition hover:bg-overlay/10 sm:flex sm:shrink-0">
+              <button
+                type="button"
+                onClick={() => setEstimated((v) => !v)}
+                className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
+                  estimated
+                    ? 'border-blue-500/40 bg-overlay/5'
+                    : 'border-overlay/10 bg-overlay/5'
+                }`}
+              >
                 <div
-                  className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${
+                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
                     estimated ? 'bg-blue-500' : 'bg-control'
                   }`}
                 >
                   <div
-                    className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
-                      estimated ? 'translate-x-[14px]' : 'translate-x-[2px]'
+                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                      estimated ? 'translate-x-4' : 'translate-x-0.5'
                     }`}
                   />
                 </div>
-                <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-accent' : 'text-subtle'}`}>
-                  {t.stats.estimations}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={estimated}
-                  onChange={() => setEstimated((v) => !v)}
-                  className="sr-only"
-                />
-              </label>
+                <div>
+                  <span className={`text-sm font-semibold ${estimated ? 'text-accent' : 'text-muted'}`}>
+                    {t.stats.includeEstimations}
+                  </span>
+                  <p className="text-[11px] text-subtle">
+                    {t.stats.estimationsHelp}
+                  </p>
+                </div>
+              </button>
+              </div>
 
               <button
                 type="submit"
+                aria-busy={isInitialLoading}
                 disabled={!canSubmit}
-                className="h-11 -skew-x-12 cursor-pointer rounded-sm bg-blue-600 px-6 text-sm font-bold uppercase tracking-widest text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500 disabled:opacity-40 disabled:shadow-none"
+                className="group relative mt-4 block w-full -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none"
               >
-                <span className="inline-block skew-x-12">{t.stats.search}</span>
+                <span className="relative z-10 inline-block skew-x-12">{t.stats.search}</span>
+                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-overlay/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
               </button>
+              {hasError && !hasAnyData && !isLoading && (
+                <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-negative">
+                  {getErrorMessage(firstError, language)}
+                </div>
+              )}
             </div>
-            <p className="mt-2 text-center text-[11px] text-subtle">
-              {t.stats.nightLinesNote}
-            </p>
           </form>
-        )}
+        </div>
 
-        {/* Loading */}
-        {isInitialLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-control border-t-blue-500" />
-          </div>
-        )}
-
-        {/* Error */}
-        {hasError && !hasAnyData && !isLoading && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-negative">
-            {getErrorMessage(firstError, language)}
-          </div>
-        )}
-
-        {/* Results */}
         {hasAnyData && (
-          <div className="space-y-8 sm:space-y-10">
-            <MethodologyAccordion>
-              <dl className="space-y-3 text-sm">
-                {t.stats.methodologyItems.map((item) => (
-                  <div key={item.title} className="flex gap-3">
-                    <div className="mt-1 h-3 w-3 shrink-0 rounded-full bg-blue-500 shadow-sm shadow-blue-500/40" />
-                    <div>
-                      <dt className="text-base font-bold text-ink sm:text-lg">{item.title}</dt>
-                      <dd className="mt-1 text-sm leading-relaxed text-muted">{item.text}</dd>
-                    </div>
-                  </div>
-                ))}
-              </dl>
-            </MethodologyAccordion>
+          <div
+            id="stats-results"
+            ref={resultsRef}
+            role="region"
+            aria-label={statsSubtitle}
+            tabIndex={-1}
+            className="mt-8 min-h-[calc(100dvh-5rem)] scroll-mt-6 sm:mt-10"
+          >
+            {/* Results */}
+              <div className="space-y-8 sm:space-y-10">
+                <MethodologyAccordion>
+                  <dl className="space-y-3 text-sm">
+                    {t.stats.methodologyItems.map((item) => (
+                      <div key={item.title} className="flex gap-3">
+                        <div className="mt-1 h-3 w-3 shrink-0 rounded-full bg-blue-500 shadow-sm shadow-blue-500/40" />
+                        <div>
+                          <dt className="text-base font-bold text-ink sm:text-lg">{item.title}</dt>
+                          <dd className="mt-1 text-sm leading-relaxed text-muted">{item.text}</dd>
+                        </div>
+                      </div>
+                    ))}
+                  </dl>
+                </MethodologyAccordion>
 
-            <section>
-              <SectionHeader
-                title={t.stats.punctualityTitle}
-                subtitle={
-                  punctuality.data
-                    ? lineRangeSubtitle(
-                        punctuality.data.line_number,
-                        punctuality.data.start_date,
-                        punctuality.data.end_date,
-                      )
-                    : statsSubtitle
-                }
-                tooltip={t.stats.punctualityTooltip}
-              />
-              {punctuality.data ? (
-                <PunctualityRing data={punctuality.data} />
-              ) : punctuality.error ? (
-                <SectionError error={punctuality.error} />
-              ) : (
-                <SectionLoading />
-              )}
-            </section>
+                <section>
+                  <SectionHeader
+                    title={t.stats.punctualityTitle}
+                    subtitle={
+                      punctuality.data
+                        ? lineRangeSubtitle(
+                            punctuality.data.line_number,
+                            punctuality.data.start_date,
+                            punctuality.data.end_date,
+                          )
+                        : statsSubtitle
+                    }
+                    tooltip={t.stats.punctualityTooltip}
+                  />
+                  {punctuality.data ? (
+                    <PunctualityRing data={punctuality.data} />
+                  ) : punctuality.error ? (
+                    <SectionError error={punctuality.error} />
+                  ) : (
+                    <SectionLoading />
+                  )}
+                </section>
 
-            <section>
-              <SectionHeader
-                badge="TOP 10"
-                title={t.stats.betweenStopsTitle}
-                subtitle={t.stats.betweenStopsSubtitle}
-              />
-              {maxDelay.data ? (
-                <MaxDelayTable data={maxDelay.data} />
-              ) : maxDelay.error ? (
-                <SectionError error={maxDelay.error} />
-              ) : (
-                <SectionLoading />
-              )}
-            </section>
+                <section>
+                  <SectionHeader
+                    badge="TOP 10"
+                    title={t.stats.betweenStopsTitle}
+                    subtitle={t.stats.betweenStopsSubtitle}
+                  />
+                  {maxDelay.data ? (
+                    <MaxDelayTable data={maxDelay.data} />
+                  ) : maxDelay.error ? (
+                    <SectionError error={maxDelay.error} />
+                  ) : (
+                    <SectionLoading />
+                  )}
+                </section>
 
-            <section>
-              <SectionHeader
-                badge="TOP 10"
-                title={t.stats.routeDelayTitle}
-                subtitle={t.stats.routeDelaySubtitle}
-              />
-              {routeDelay.data ? (
-                <RouteDelayTable data={routeDelay.data} />
-              ) : routeDelay.error ? (
-                <SectionError error={routeDelay.error} />
-              ) : (
-                <SectionLoading />
-              )}
-            </section>
+                <section>
+                  <SectionHeader
+                    badge="TOP 10"
+                    title={t.stats.routeDelayTitle}
+                    subtitle={t.stats.routeDelaySubtitle}
+                  />
+                  {routeDelay.data ? (
+                    <RouteDelayTable data={routeDelay.data} />
+                  ) : routeDelay.error ? (
+                    <SectionError error={routeDelay.error} />
+                  ) : (
+                    <SectionLoading />
+                  )}
+                </section>
 
-            <section>
-              <SectionHeader
-                title={t.stats.trendTitle}
-                subtitle={t.stats.trendSubtitle}
-              />
-              {trend.data ? (
-                trend.data.days.length >= 2 ? (
-                  <TrendChart data={trend.data} />
-                ) : (
-                  <p className="py-8 text-center text-sm text-subtle">
-                    {t.stats.notEnoughTrendData}
-                  </p>
-                )
-              ) : trend.error ? (
-                <SectionError error={trend.error} />
-              ) : (
-                <SectionLoading />
-              )}
-            </section>
+                <section>
+                  <SectionHeader
+                    title={t.stats.trendTitle}
+                    subtitle={t.stats.trendSubtitle}
+                  />
+                  {trend.data ? (
+                    trend.data.days.length >= 2 ? (
+                      <TrendChart data={trend.data} />
+                    ) : (
+                      <p className="py-8 text-center text-sm text-subtle">
+                        {t.stats.notEnoughTrendData}
+                      </p>
+                    )
+                  ) : trend.error ? (
+                    <SectionError error={trend.error} />
+                  ) : (
+                    <SectionLoading />
+                  )}
+                </section>
+              </div>
           </div>
         )}
       </div>

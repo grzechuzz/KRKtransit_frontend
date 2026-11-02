@@ -21,10 +21,6 @@ Vite przekazuje zapytania `/v1` do `https://api.krktransit.pl`.
 Nie trzeba uruchamiać lokalnego backendu ani konfigurować pliku `.env`.
 Dane mapy i statystyk wymagają połączenia z API.
 
-Przełącznik słońce/księżyc obok wyboru języka zmienia motyw całej aplikacji,
-w tym mapy. Domyślny motyw jest ciemny. Wybór jest zapisywany lokalnie
-w przeglądarce i przywracany po odświeżeniu.
-
 ## Sprawdzenie zmian
 
 Widoki mają osobne adresy: `/#/map`, `/#/stats` i `/#/about`.
