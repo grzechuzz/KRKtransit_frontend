@@ -101,13 +101,13 @@ export default function LineFilter({
           <div className="mb-2 grid shrink-0 grid-cols-2 gap-1.5 border-b border-overlay/10 pb-2">
             <button
               onClick={onShowAll}
-              className="cursor-pointer rounded-lg bg-overlay/10 py-1.5 text-xs font-medium text-body transition hover:bg-overlay/20"
+              className="cursor-pointer rounded-lg bg-overlay/10 py-1.5 text-xs font-medium text-ink transition hover:bg-overlay/20"
             >
               {t.lineFilter.all}
             </button>
             <button
               onClick={onHideAll}
-              className="cursor-pointer rounded-lg bg-overlay/10 py-1.5 text-xs font-medium text-body transition hover:bg-overlay/20"
+              className="cursor-pointer rounded-lg bg-overlay/10 py-1.5 text-xs font-medium text-ink transition hover:bg-overlay/20"
             >
               {t.lineFilter.clear}
             </button>

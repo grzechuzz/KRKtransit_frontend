@@ -41,7 +41,7 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
             setLanguageMenuOpen(false);
             setMobileMenuOpen((prev) => !prev);
           }}
-          className="mr-2 flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted transition hover:bg-overlay/5 hover:text-ink md:hidden"
+          className="mr-2 flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink transition-colors hover:bg-overlay/5 min-[820px]:hidden"
           aria-label="Menu"
           aria-expanded={mobileMenuOpen}
         >
@@ -57,7 +57,7 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
         {/* Brand — click goes to home */}
         <button
           onClick={() => handleNavigate('home')}
-          className="min-w-0 flex-1 cursor-pointer text-left md:mr-5 md:flex-none"
+          className="min-w-0 flex-1 cursor-pointer text-left min-[820px]:mr-5 min-[820px]:flex-none"
         >
           <span className="whitespace-nowrap text-base font-black uppercase tracking-wide text-ink min-[380px]:text-xl lg:text-2xl">
             KRK
@@ -66,17 +66,17 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
         </button>
 
         {/* Desktop navigation - skewed buttons */}
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 min-[820px]:flex">
           {navItems.map(({ page, label }) => {
             const active = currentPage === page;
             return (
               <button
                 key={page}
                 onClick={() => handleNavigate(page)}
-                className={`w-28 -skew-x-12 cursor-pointer rounded-sm py-2 text-center text-sm font-bold tracking-widest transition-colors lg:w-40 ${
+                className={`w-40 -skew-x-12 cursor-pointer rounded-sm py-2 text-center text-sm font-bold tracking-widest transition-colors ${
                   active
                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                    : 'bg-overlay/5 text-muted hover:bg-overlay/10 hover:text-ink'
+                    : 'bg-overlay/5 text-ink hover:bg-overlay/10'
                 }`}
               >
                 <span className="inline-block skew-x-12">{label}</span>
@@ -137,7 +137,7 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
                     aria-label={option.ariaLabel}
                     aria-pressed={active}
                     title={option.label}
-                    className={`flex h-9 w-11 cursor-pointer items-center justify-center rounded-lg transition sm:h-10 sm:w-12 ${
+                    className={`flex h-9 w-11 cursor-pointer items-center justify-center rounded-lg transition-colors sm:h-10 sm:w-12 ${
                       active
                         ? 'bg-blue-600/20 ring-2 ring-blue-400'
                         : 'opacity-65 hover:bg-overlay/10 hover:opacity-100'
@@ -156,17 +156,17 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
 
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-overlay/5 bg-canvas px-3 py-2 md:hidden">
+        <nav className="flex flex-col gap-1 border-t border-overlay/5 bg-canvas px-3 py-2 min-[820px]:hidden">
           {navItems.map(({ page, label }) => {
             const active = currentPage === page;
             return (
               <button
                 key={page}
                 onClick={() => handleNavigate(page)}
-                className={`-skew-x-12 cursor-pointer rounded-sm w-full py-2.5 text-center text-sm font-bold tracking-widest transition-all ${
+                className={`w-full -skew-x-12 cursor-pointer rounded-sm py-2.5 text-center text-sm font-bold tracking-widest transition-colors ${
                   active
                     ? 'bg-blue-600 text-white'
-                    : 'bg-overlay/5 text-muted hover:bg-overlay/10 hover:text-ink'
+                    : 'bg-overlay/5 text-ink hover:bg-overlay/10'
                 }`}
               >
                 <span className="inline-block skew-x-12">{label}</span>

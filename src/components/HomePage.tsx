@@ -37,7 +37,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
           <button
             onClick={() => onNavigate('stats')}
-            className="group relative -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-overlay/5 w-52 py-4 text-center text-sm font-bold uppercase tracking-widest text-body ring-1 ring-overlay/10 transition hover:bg-overlay/10 hover:text-ink"
+            className="group relative -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-overlay/5 w-52 py-4 text-center text-sm font-bold uppercase tracking-widest text-ink ring-1 ring-overlay/10 transition hover:bg-overlay/10"
           >
             <span className="relative z-10 inline-block skew-x-12">{t.home.statsCta}</span>
             <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-overlay/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />

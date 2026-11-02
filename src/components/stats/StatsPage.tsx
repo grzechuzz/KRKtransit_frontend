@@ -113,7 +113,7 @@ function TooltipIcon({ text }: { text: string }) {
         onClick={() => setOpen((v) => !v)}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-overlay/10 text-[11px] font-bold text-subtle ring-1 ring-overlay/10 transition hover:bg-overlay/20 hover:text-body"
+        className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-overlay/10 text-[11px] font-bold text-ink ring-1 ring-overlay/10 transition hover:bg-overlay/20 hover:text-body"
       >
         i
       </button>
@@ -410,7 +410,7 @@ export default function StatsPage() {
                   />
                 </div>
                 <div>
-                  <span className={`text-sm font-semibold ${estimated ? 'text-accent' : 'text-muted'}`}>
+                  <span className={`text-sm font-semibold ${estimated ? 'text-accent' : 'text-ink'}`}>
                     {t.stats.includeEstimations}
                   </span>
                   <p className="text-[11px] text-subtle">

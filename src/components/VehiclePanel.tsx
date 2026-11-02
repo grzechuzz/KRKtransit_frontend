@@ -60,7 +60,7 @@ function UpcomingStops({ query, lineNumber, defaultExpanded = true }: {
           aria-expanded={expanded}
           aria-controls={contentId}
           onClick={() => setExpanded((value) => !value)}
-          className="flex min-h-11 w-full touch-manipulation cursor-pointer items-center gap-2 rounded-lg py-2 text-left text-sm font-semibold text-strong transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+          className="flex min-h-11 w-full touch-manipulation cursor-pointer items-center gap-2 rounded-lg py-2 text-left text-sm font-semibold text-ink transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
         >
           <span className="min-w-0 flex-1">{labels.upcomingStops}</span>
           {!message && data && (
@@ -166,7 +166,7 @@ export function MobileVehicleBar({ vehicle, onClose, upcomingStops }: VehiclePan
         <button
           onClick={onClose}
           type="button"
-          className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full bg-overlay/10 text-sm text-muted transition-colors hover:bg-overlay/20 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+          className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full bg-overlay/10 text-sm text-ink transition-colors hover:bg-overlay/20 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
           aria-label={t.vehiclePanel.close}
         >
           X
@@ -194,7 +194,7 @@ export default function VehiclePanel({ vehicle, onClose, upcomingStops }: Vehicl
         <button
           type="button"
           onClick={onClose}
-          className="flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-full bg-overlay/10 text-sm text-muted transition-colors hover:bg-overlay/20 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+          className="flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-full bg-overlay/10 text-sm text-ink transition-colors hover:bg-overlay/20 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
           aria-label={t.vehiclePanel.close}
         >
           X
