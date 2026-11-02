@@ -25,6 +25,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = language;
+    document.title = translations[language].meta.title;
   }, [language]);
 
   const value = useMemo<I18nContextValue>(

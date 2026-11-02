@@ -4,6 +4,9 @@ export type Language = 'pl' | 'en';
 
 const pl = {
   locale: 'pl-PL',
+  meta: {
+    title: 'KRK Transit | Mapa live i statystyki',
+  },
   language: {
     polish: 'Polski',
     english: 'Angielski',
@@ -196,6 +199,9 @@ export type Dictionary = typeof pl;
 
 const en: Dictionary = {
   locale: 'en-GB',
+  meta: {
+    title: 'KRK Transit | Live Map & Statistics',
+  },
   language: {
     polish: 'Polish',
     english: 'English',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend, getErrorMessage } from '../../api/client';
 import PunctualityRing from './PunctualityRing';
@@ -17,9 +17,10 @@ function localDateStr(d: Date): string {
 const DEFAULT_STATS_RANGE_DAYS = 7;
 const MIN_STATS_DATE = '2026-03-11';
 
-function clampStatsDate(value: string): string {
+function clampStatsDate(value: string, maxDate: string): string {
   if (!value) return value;
-  return value < MIN_STATS_DATE ? MIN_STATS_DATE : value;
+  if (value < MIN_STATS_DATE) return MIN_STATS_DATE;
+  return value > maxDate ? maxDate : value;
 }
 
 function getDefaultDates() {
@@ -30,6 +31,74 @@ function getDefaultDates() {
     start: localDateStr(weekAgo),
     end: localDateStr(today),
   };
+}
+
+function formatDateLabel(value: string, locale: string): string {
+  if (!value) return '';
+
+  const date = new Date(`${value}T00:00:00`);
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(date);
+}
+
+function LocalizedDateInput({
+  id,
+  value,
+  min,
+  max,
+  onChange,
+  className = '',
+}: {
+  id: string;
+  value: string;
+  min: string;
+  max: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  const { locale } = useI18n();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const openPicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+      return;
+    }
+
+    input.focus();
+  };
+
+  return (
+    <div className={`relative ${className}`} onClick={openPicker}>
+      <input
+        ref={inputRef}
+        id={id}
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => onChange(e.target.value)}
+        className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0 [color-scheme:dark]"
+      />
+      <div
+        aria-hidden="true"
+        className="flex h-full w-full items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition peer-focus:border-blue-500 peer-focus:ring-1 peer-focus:ring-blue-500"
+      >
+        <span className="truncate">{formatDateLabel(value, locale)}</span>
+        <svg
+          className="h-4 w-4 shrink-0 text-gray-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+        </svg>
+      </div>
+    </div>
+  );
 }
 
 /* ── Tooltip Icon (click on mobile, hover on desktop) ── */
@@ -157,7 +226,8 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
 /* ── Page ─────────────────────────────────────────────── */
 
 export default function StatsPage() {
-  const { language, t } = useI18n();
+  const { language, t, locale } = useI18n();
+  const maxStatsDate = localDateStr(new Date());
   const defaults = getDefaultDates();
   const [lineInput, setLineInput] = useState('');
   const [startDate, setStartDate] = useState(defaults.start);
@@ -171,11 +241,11 @@ export default function StatsPage() {
   } | null>(null);
 
   const handleStartDateChange = (value: string) => {
-    setStartDate(clampStatsDate(value));
+    setStartDate(clampStatsDate(value, maxStatsDate));
   };
 
   const handleEndDateChange = (value: string) => {
-    setEndDate(clampStatsDate(value));
+    setEndDate(clampStatsDate(value, maxStatsDate));
   };
 
   const canSubmit = lineInput.trim().length > 0 && startDate && endDate;
@@ -186,8 +256,8 @@ export default function StatsPage() {
     if (!canSubmit) return;
     setQuery({
       line: lineInput.trim(),
-      start: clampStatsDate(startDate),
-      end: clampStatsDate(endDate),
+      start: clampStatsDate(startDate, maxStatsDate),
+      end: clampStatsDate(endDate, maxStatsDate),
       estimated,
     });
   };
@@ -230,7 +300,10 @@ export default function StatsPage() {
   const hasAnyData = Boolean(punctuality.data || maxDelay.data || routeDelay.data || trend.data);
   const isInitialLoading = isLoading && !hasAnyData;
   const hasResults = hasAnyData || hasError || isLoading;
-  const statsSubtitle = query ? t.stats.lineRange(query.line, query.start, query.end) : t.stats.selectedRange;
+  const lineRangeSubtitle = (line: string, start: string, end: string) => (
+    t.stats.lineRange(line, formatDateLabel(start, locale), formatDateLabel(end, locale))
+  );
+  const statsSubtitle = query ? lineRangeSubtitle(query.line, query.start, query.end) : t.stats.selectedRange;
 
   return (
     <div className="h-full overflow-y-auto">
@@ -270,22 +343,22 @@ export default function StatsPage() {
                       {t.stats.dateRange}
                     </label>
                     <div className="flex items-center gap-2">
-                      <input
+                      <LocalizedDateInput
                         id="start-hero"
-                        type="date"
                         value={startDate}
                         min={MIN_STATS_DATE}
-                        onChange={(e) => handleStartDateChange(e.target.value)}
-                        className="h-11 min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                        max={maxStatsDate}
+                        onChange={handleStartDateChange}
+                        className="h-11 min-w-0 flex-1"
                       />
                       <span className="shrink-0 text-xs text-gray-600">—</span>
-                      <input
+                      <LocalizedDateInput
                         id="end-hero"
-                        type="date"
                         value={endDate}
                         min={MIN_STATS_DATE}
-                        onChange={(e) => handleEndDateChange(e.target.value)}
-                        className="h-11 min-w-0 flex-1 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                        max={maxStatsDate}
+                        onChange={handleEndDateChange}
+                        className="h-11 min-w-0 flex-1"
                       />
                     </div>
                   </div>
@@ -363,26 +436,26 @@ export default function StatsPage() {
                 <label htmlFor="start-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
                   {t.stats.from}
                 </label>
-                <input
+                <LocalizedDateInput
                   id="start-mobile"
-                  type="date"
                   value={startDate}
                   min={MIN_STATS_DATE}
-                  onChange={(e) => handleStartDateChange(e.target.value)}
-                  className="h-11 w-full min-w-0 max-w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition [-webkit-appearance:none] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                  max={maxStatsDate}
+                  onChange={handleStartDateChange}
+                  className="h-11 w-full min-w-0 max-w-full"
                 />
               </div>
               <div className="sm:hidden">
                 <label htmlFor="end-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
                   {t.stats.to}
                 </label>
-                <input
+                <LocalizedDateInput
                   id="end-mobile"
-                  type="date"
                   value={endDate}
                   min={MIN_STATS_DATE}
-                  onChange={(e) => handleEndDateChange(e.target.value)}
-                  className="h-11 w-full min-w-0 max-w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition [-webkit-appearance:none] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                  max={maxStatsDate}
+                  onChange={handleEndDateChange}
+                  className="h-11 w-full min-w-0 max-w-full"
                 />
               </div>
               <div className="sm:hidden">
@@ -419,26 +492,26 @@ export default function StatsPage() {
                   <label htmlFor="start" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
                     {t.stats.from}
                   </label>
-                  <input
+                  <LocalizedDateInput
                     id="start"
-                    type="date"
                     value={startDate}
                     min={MIN_STATS_DATE}
-                    onChange={(e) => handleStartDateChange(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                    max={maxStatsDate}
+                    onChange={handleStartDateChange}
+                    className="h-11 w-full"
                   />
                 </div>
                 <div>
                   <label htmlFor="end" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
                     {t.stats.to}
                   </label>
-                  <input
+                  <LocalizedDateInput
                     id="end"
-                    type="date"
                     value={endDate}
                     min={MIN_STATS_DATE}
-                    onChange={(e) => handleEndDateChange(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                    max={maxStatsDate}
+                    onChange={handleEndDateChange}
+                    className="h-11 w-full"
                   />
                 </div>
               </div>
@@ -517,7 +590,11 @@ export default function StatsPage() {
                 title={t.stats.punctualityTitle}
                 subtitle={
                   punctuality.data
-                    ? t.stats.lineRange(punctuality.data.line_number, punctuality.data.start_date, punctuality.data.end_date)
+                    ? lineRangeSubtitle(
+                        punctuality.data.line_number,
+                        punctuality.data.start_date,
+                        punctuality.data.end_date,
+                      )
                     : statsSubtitle
                 }
                 tooltip={t.stats.punctualityTooltip}

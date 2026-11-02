@@ -21,8 +21,12 @@ html, body, #root {
   animation: blinker 2s ease-in-out infinite;
 }
 
+.leaflet-container {
+  background: #1f2937;
+}
+
 .leaflet-tile-pane {
-  filter: brightness(2.2) saturate(0.4) sepia(0.35) hue-rotate(180deg);
+  filter: invert(0.92) hue-rotate(180deg) brightness(0.9) contrast(1.12) saturate(0.55);
 }
 
 @media (hover: none) and (pointer: coarse) {
