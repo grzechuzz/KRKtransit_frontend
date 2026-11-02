@@ -40,6 +40,20 @@ export interface TripStopsResponse {
   stops: TripStop[];
 }
 
+export interface UpcomingStopsResponse {
+  trip_id: string;
+  status: 'IN_PROGRESS' | 'FINISHED' | 'UNKNOWN';
+  observed_at: string;
+  stops: {
+    stop_id: string;
+    stop_name: string;
+    stop_desc: string | null;
+    sequence: number;
+    scheduled_arrival: string;
+    predicted_arrival: string | null;
+  }[];
+}
+
 export interface PunctualityResponse {
   line_number: string;
   start_date: string;

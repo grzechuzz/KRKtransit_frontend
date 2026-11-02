@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 import { useVehicleCache } from '../hooks/useVehicleCache';
+import { useUpcomingStops } from '../hooks/useUpcomingStops';
 import { getErrorMessage } from '../api/client';
 import { useI18n } from '../i18n-core';
 import VehicleMarker from './VehicleMarker';
@@ -70,12 +71,14 @@ export default function LiveMap() {
   const currentSelected = selectedVehicle
     ? visibleVehicles.find((v) => v.license_plate === selectedVehicle.license_plate) ?? null
     : null;
+  // One polling observer shared by the desktop and mobile panels.
+  const upcomingStops = useUpcomingStops(currentSelected?.trip_id ?? null);
 
   return (
     <div className="flex h-full w-full flex-col">
       {/* Mobile: static vehicle info bar between navbar and map */}
       {currentSelected && (
-        <MobileVehicleBar vehicle={currentSelected} onClose={handleClose} />
+        <MobileVehicleBar vehicle={currentSelected} onClose={handleClose} upcomingStops={upcomingStops} />
       )}
 
       {/* Map fills remaining space */}
@@ -141,7 +144,7 @@ export default function LiveMap() {
 
         {/* Desktop: floating panel overlay */}
         {currentSelected && (
-          <VehiclePanel vehicle={currentSelected} onClose={handleClose} />
+          <VehiclePanel vehicle={currentSelected} onClose={handleClose} upcomingStops={upcomingStops} />
         )}
       </div>
     </div>

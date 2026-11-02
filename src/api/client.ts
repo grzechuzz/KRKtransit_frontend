@@ -2,6 +2,7 @@ import type {
   LiveVehicleResponse,
   ShapeResponse,
   TripStopsResponse,
+  UpcomingStopsResponse,
   PunctualityResponse,
   MaxDelayResponse,
   RouteDelayResponse,
@@ -209,6 +210,10 @@ export function fetchShape(shapeId: string, language: Language = DEFAULT_LANGUAG
 
 export function fetchTripStops(tripId: string, language: Language = DEFAULT_LANGUAGE): Promise<TripStopsResponse> {
   return fetchJson<TripStopsResponse>(`${BASE_URL}/trips/${encodeURIComponent(tripId)}/stops`, language);
+}
+
+export function fetchUpcomingStops(tripId: string, language: Language = DEFAULT_LANGUAGE): Promise<UpcomingStopsResponse> {
+  return fetchJson<UpcomingStopsResponse>(`${BASE_URL}/trips/${encodeURIComponent(tripId)}/upcoming-stops`, language);
 }
 
 function statsParams(startDate: string, endDate: string, includeEstimated: boolean): URLSearchParams {
