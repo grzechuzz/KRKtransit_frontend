@@ -28,7 +28,7 @@ export default function LiveMap() {
 
   const handleSelect = useCallback((vehicle: Vehicle) => {
     setSelectedVehicle((prev) =>
-      prev?.trip_id === vehicle.trip_id ? prev : vehicle,
+      prev?.license_plate === vehicle.license_plate ? prev : vehicle,
     );
   }, []);
 
@@ -68,7 +68,7 @@ export default function LiveMap() {
   const emptyErrorMessage = error && !vehicles.length ? getErrorMessage(error, language, t.map.apiConnectionError) : null;
 
   const currentSelected = selectedVehicle
-    ? visibleVehicles.find((v) => v.trip_id === selectedVehicle.trip_id) ?? null
+    ? visibleVehicles.find((v) => v.license_plate === selectedVehicle.license_plate) ?? null
     : null;
 
   return (
@@ -105,9 +105,9 @@ export default function LiveMap() {
 
           {visibleVehicles.map((vehicle) => (
             <VehicleMarker
-              key={vehicle.trip_id}
+              key={vehicle.license_plate}
               vehicle={vehicle}
-              isSelected={currentSelected?.trip_id === vehicle.trip_id}
+              isSelected={currentSelected?.license_plate === vehicle.license_plate}
               onSelect={handleSelect}
             />
           ))}
