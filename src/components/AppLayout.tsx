@@ -9,7 +9,7 @@ export default function AppLayout() {
   const { page, navigate } = usePageNavigation();
 
   return (
-    <div className="flex h-dvh w-screen flex-col bg-gray-950">
+    <div className="flex h-dvh w-screen flex-col bg-canvas">
       <TopNav currentPage={page} onNavigate={navigate} />
 
       <main className="flex-1 overflow-hidden">

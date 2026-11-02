@@ -128,14 +128,14 @@ export default function LiveMap() {
           />
         </div>
 
-        <div className={`absolute bottom-4 left-4 z-[1000] max-w-[calc(100vw-2rem)] rounded-xl bg-gray-900/90 px-4 py-2 text-sm text-gray-300 backdrop-blur-sm transition-opacity ${filterOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute bottom-4 left-4 z-[1000] max-w-[calc(100vw-2rem)] rounded-xl bg-surface/90 px-4 py-2 text-sm text-body backdrop-blur-sm transition-opacity ${filterOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           {isLoading && !vehicles.length && t.map.loadingVehicles}
-          {emptyErrorMessage && <span className="block max-w-sm text-red-400">{emptyErrorMessage}</span>}
+          {emptyErrorMessage && <span className="block max-w-sm text-negative">{emptyErrorMessage}</span>}
           {vehicles.length > 0 && (
             <span>
-              <span className="font-bold text-white">{visibleVehicles.length}</span>
+              <span className="font-bold text-ink">{visibleVehicles.length}</span>
               {visibleVehicles.length !== vehicles.length && (
-                <span className="text-gray-500">/{vehicles.length}</span>
+                <span className="text-subtle">/{vehicles.length}</span>
               )}
               {' '}{t.map.vehicles}
             </span>

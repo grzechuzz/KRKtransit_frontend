@@ -8,6 +8,7 @@ interface PunctualityRingProps {
 const CATEGORIES = [
   {
     key: 'on_time',
+    textColor: 'text-positive',
     sublabel: '< 2 min',
     color: '#22c55e',
     gradientFrom: 'from-green-500/20',
@@ -16,6 +17,7 @@ const CATEGORIES = [
   },
   {
     key: 'slightly_delayed',
+    textColor: 'text-warning',
     sublabel: '2 – 6 min',
     color: '#eab308',
     gradientFrom: 'from-yellow-500/20',
@@ -24,6 +26,7 @@ const CATEGORIES = [
   },
   {
     key: 'delayed',
+    textColor: 'text-negative',
     sublabel: '> 6 min',
     color: '#ef4444',
     gradientFrom: 'from-red-500/20',
@@ -74,28 +77,27 @@ export default function PunctualityRing({ data }: PunctualityRingProps) {
               />
               {/* Value */}
               <span
-                className="text-base font-black sm:text-3xl"
-                style={{ color: cat.color }}
+                className={`text-base font-black sm:text-3xl ${cat.textColor}`}
               >
                 {values[cat.key].toFixed(1)}%
               </span>
             </div>
 
             {/* Label */}
-            <span className="text-center text-xs font-bold uppercase tracking-wider text-white sm:text-sm">
+            <span className="text-center text-xs font-bold uppercase tracking-wider text-ink sm:text-sm">
               {labels[cat.key]}
             </span>
-            <span className="mt-0.5 text-center text-[10px] text-gray-500 sm:text-xs">
+            <span className="mt-0.5 text-center text-[10px] text-subtle sm:text-xs">
               {cat.sublabel}
             </span>
-            <span className="mt-1 text-[10px] text-gray-600 sm:text-xs">
+            <span className="mt-1 text-[10px] text-subtle sm:text-xs">
               {t.punctuality.measurements(counts[cat.key].toLocaleString(locale))}
             </span>
           </div>
         ))}
       </div>
 
-      <p className="mt-4 text-center text-xs text-gray-600">
+      <p className="mt-4 text-center text-xs text-subtle">
         {t.punctuality.totalMeasurements(data.total_stops.toLocaleString(locale))}
       </p>
     </div>

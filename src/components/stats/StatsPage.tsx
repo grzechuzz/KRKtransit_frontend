@@ -80,15 +80,15 @@ function LocalizedDateInput({
         min={min}
         max={max}
         onChange={(e) => onChange(e.target.value)}
-        className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0 [color-scheme:dark]"
+        className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0 [color-scheme:inherit]"
       />
       <div
         aria-hidden="true"
-        className="flex h-full w-full items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white outline-none transition peer-focus:border-blue-500 peer-focus:ring-1 peer-focus:ring-blue-500"
+        className="flex h-full w-full items-center justify-between gap-2 rounded-lg border border-overlay/10 bg-overlay/5 px-3 text-sm text-ink outline-none transition peer-focus:border-blue-500 peer-focus:ring-1 peer-focus:ring-blue-500"
       >
         <span className="truncate">{formatDateLabel(value, locale)}</span>
         <svg
-          className="h-4 w-4 shrink-0 text-gray-500"
+          className="h-4 w-4 shrink-0 text-subtle"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -113,12 +113,12 @@ function TooltipIcon({ text }: { text: string }) {
         onClick={() => setOpen((v) => !v)}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white/10 text-[11px] font-bold text-gray-500 ring-1 ring-white/10 transition hover:bg-white/20 hover:text-gray-300"
+        className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-overlay/10 text-[11px] font-bold text-subtle ring-1 ring-overlay/10 transition hover:bg-overlay/20 hover:text-body"
       >
         i
       </button>
       {open && (
-        <span className="absolute bottom-full right-0 mb-2 w-56 rounded-lg bg-gray-800 px-3 py-2 text-[11px] leading-relaxed text-gray-200 shadow-xl ring-1 ring-white/10 sm:left-1/2 sm:right-auto sm:w-64 sm:-translate-x-1/2">
+        <span className="absolute bottom-full right-0 mb-2 w-56 rounded-lg bg-raised px-3 py-2 text-[11px] leading-relaxed text-strong shadow-xl ring-1 ring-overlay/10 sm:left-1/2 sm:right-auto sm:w-64 sm:-translate-x-1/2">
           {text}
         </span>
       )}
@@ -138,12 +138,12 @@ function SectionHeader({ title, subtitle, tooltip, badge }: { title: string; sub
             <span className="inline-block skew-x-12">{badge}</span>
           </span>
         )}
-        <h2 className="text-lg font-black uppercase tracking-wide text-white sm:text-xl">
+        <h2 className="text-lg font-black uppercase tracking-wide text-ink sm:text-xl">
           {title}
         </h2>
         {tooltip && <TooltipIcon text={tooltip} />}
       </div>
-      <p className="mt-2 text-xs text-gray-500 sm:text-sm">{subtitle}</p>
+      <p className="mt-2 text-xs text-subtle sm:text-sm">{subtitle}</p>
       <div className="mt-3 h-px bg-gradient-to-r from-blue-500/40 via-blue-500/10 to-transparent" />
     </div>
   );
@@ -153,8 +153,8 @@ function SectionLoading() {
   const { t } = useI18n();
 
   return (
-    <div className="flex min-h-36 items-center justify-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] text-sm text-gray-500">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-700 border-t-blue-500" />
+    <div className="flex min-h-36 items-center justify-center gap-3 rounded-xl border border-overlay/5 bg-overlay/[0.02] text-sm text-subtle">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-control border-t-blue-500" />
       <span>{t.stats.loading}</span>
     </div>
   );
@@ -164,7 +164,7 @@ function SectionError({ error }: { error: unknown }) {
   const { language } = useI18n();
 
   return (
-    <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-red-400">
+    <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-negative">
       {getErrorMessage(error, language)}
     </div>
   );
@@ -185,11 +185,11 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
       >
         <div className="flex items-center gap-3">
           <div className="w-1.5 self-stretch -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
-          <h2 className="text-lg font-black uppercase tracking-wide text-white sm:text-xl">
+          <h2 className="text-lg font-black uppercase tracking-wide text-ink sm:text-xl">
             {t.stats.methodologyTitle}
           </h2>
           <svg
-            className={`h-5 w-5 shrink-0 text-gray-500 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+            className={`h-5 w-5 shrink-0 text-subtle transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -200,13 +200,13 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
         </div>
 
         {!open && (
-          <p className="mt-2.5 animate-blinker text-xs font-semibold tracking-wide text-blue-400 sm:text-sm">
+          <p className="mt-2.5 animate-blinker text-xs font-semibold tracking-wide text-accent sm:text-sm">
             {t.stats.expandMethodology}
           </p>
         )}
 
         {open && (
-          <p className="mt-2 text-xs text-gray-500 sm:text-sm">
+          <p className="mt-2 text-xs text-subtle sm:text-sm">
             {t.stats.methodologySubtitle}
           </p>
         )}
@@ -313,17 +313,17 @@ export default function StatsPage() {
         {!hasResults && (
           <div className="flex min-h-[60vh] flex-col items-center justify-center">
             <form onSubmit={handleSubmit} className="w-full max-w-lg">
-              <div className="rounded-2xl border border-white/5 bg-gradient-to-b from-white/[0.04] to-transparent p-6 shadow-2xl sm:p-10">
-                <h1 className="mb-1 text-center text-2xl font-black uppercase tracking-wide text-white sm:text-4xl">
+              <div className="rounded-2xl border border-overlay/5 bg-gradient-to-b from-overlay/[0.04] to-transparent p-6 shadow-panel sm:p-10">
+                <h1 className="mb-1 text-center text-2xl font-black uppercase tracking-wide text-ink sm:text-4xl">
                   {t.stats.title}
                 </h1>
-                <p className="mb-8 text-center text-xs text-gray-600">
+                <p className="mb-8 text-center text-xs text-subtle">
                   {t.stats.nightLinesNote}
                 </p>
 
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="line-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                    <label htmlFor="line-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
                       {t.stats.lineNumber}
                     </label>
                     <input
@@ -334,12 +334,12 @@ export default function StatsPage() {
                       placeholder="304"
                       maxLength={5}
                       autoComplete="off"
-                      className="h-14 w-full rounded-lg border border-white/10 bg-white/5 px-5 text-2xl font-black text-white placeholder-gray-700 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-3xl"
+                      className="h-14 w-full rounded-lg border border-overlay/10 bg-overlay/5 px-5 text-2xl font-black text-ink placeholder-subtle outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-3xl"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="start-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                    <label htmlFor="start-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
                       {t.stats.dateRange}
                     </label>
                     <div className="flex items-center gap-2">
@@ -351,7 +351,7 @@ export default function StatsPage() {
                         onChange={handleStartDateChange}
                         className="h-11 min-w-0 flex-1"
                       />
-                      <span className="shrink-0 text-xs text-gray-600">—</span>
+                      <span className="shrink-0 text-xs text-subtle">—</span>
                       <LocalizedDateInput
                         id="end-hero"
                         value={endDate}
@@ -365,7 +365,7 @@ export default function StatsPage() {
                 </div>
 
                 <div className="mt-4">
-                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-gray-500">
+                  <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
                     {t.stats.estimations}
                   </label>
                 <button
@@ -373,13 +373,13 @@ export default function StatsPage() {
                   onClick={() => setEstimated((v) => !v)}
                   className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
                     estimated
-                      ? 'border-blue-500/40 bg-white/5'
-                      : 'border-white/10 bg-white/5'
+                      ? 'border-blue-500/40 bg-overlay/5'
+                      : 'border-overlay/10 bg-overlay/5'
                   }`}
                 >
                   <div
                     className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-                      estimated ? 'bg-blue-500' : 'bg-gray-700'
+                      estimated ? 'bg-blue-500' : 'bg-control'
                     }`}
                   >
                     <div
@@ -389,10 +389,10 @@ export default function StatsPage() {
                     />
                   </div>
                   <div>
-                    <span className={`text-sm font-semibold ${estimated ? 'text-blue-400' : 'text-gray-400'}`}>
+                    <span className={`text-sm font-semibold ${estimated ? 'text-accent' : 'text-muted'}`}>
                       {t.stats.includeEstimations}
                     </span>
-                    <p className="text-[11px] text-gray-600">
+                    <p className="text-[11px] text-subtle">
                       {t.stats.estimationsHelp}
                     </p>
                   </div>
@@ -405,7 +405,7 @@ export default function StatsPage() {
                   className="group relative mt-4 block w-full -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none"
                 >
                   <span className="relative z-10 inline-block skew-x-12">{t.stats.search}</span>
-                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-overlay/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
                 </button>
               </div>
             </form>
@@ -417,7 +417,7 @@ export default function StatsPage() {
           <form onSubmit={handleSubmit} className="mb-8 sm:mb-12">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
               <div className="flex-shrink-0 sm:flex-shrink-0">
-                <label htmlFor="line" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+                <label htmlFor="line" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
                   {t.stats.line}
                 </label>
                 <input
@@ -428,12 +428,12 @@ export default function StatsPage() {
                   placeholder="304"
                   maxLength={5}
                   autoComplete="off"
-                  className="h-11 w-full rounded-lg border border-white/10 bg-white/5 px-4 text-lg font-bold text-white placeholder-gray-600 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:w-28"
+                  className="h-11 w-full rounded-lg border border-overlay/10 bg-overlay/5 px-4 text-lg font-bold text-ink placeholder-subtle outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:w-28"
                 />
               </div>
 
               <div className="sm:hidden">
-                <label htmlFor="start-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+                <label htmlFor="start-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
                   {t.stats.from}
                 </label>
                 <LocalizedDateInput
@@ -446,7 +446,7 @@ export default function StatsPage() {
                 />
               </div>
               <div className="sm:hidden">
-                <label htmlFor="end-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+                <label htmlFor="end-mobile" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
                   {t.stats.to}
                 </label>
                 <LocalizedDateInput
@@ -459,13 +459,13 @@ export default function StatsPage() {
                 />
               </div>
               <div className="sm:hidden">
-                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-subtle">
                   {t.stats.estimations}
                 </p>
-                <label htmlFor="estimated-mobile" className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 select-none transition hover:bg-white/10">
+                <label htmlFor="estimated-mobile" className="flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-overlay/10 bg-overlay/5 px-3 select-none transition hover:bg-overlay/10">
                   <div
                     className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${
-                      estimated ? 'bg-blue-500' : 'bg-gray-600'
+                      estimated ? 'bg-blue-500' : 'bg-control'
                     }`}
                   >
                     <div
@@ -474,7 +474,7 @@ export default function StatsPage() {
                       }`}
                     />
                   </div>
-                  <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-blue-400' : 'text-gray-500'}`}>
+                  <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-accent' : 'text-subtle'}`}>
                     {t.stats.includeEstimations}
                   </span>
                   <input
@@ -489,7 +489,7 @@ export default function StatsPage() {
 
               <div className="hidden flex-1 grid-cols-2 gap-3 sm:grid">
                 <div>
-                  <label htmlFor="start" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <label htmlFor="start" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
                     {t.stats.from}
                   </label>
                   <LocalizedDateInput
@@ -502,7 +502,7 @@ export default function StatsPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="end" className="mb-1 block text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <label htmlFor="end" className="mb-1 block text-xs font-medium uppercase tracking-wider text-subtle">
                     {t.stats.to}
                   </label>
                   <LocalizedDateInput
@@ -517,10 +517,10 @@ export default function StatsPage() {
               </div>
 
               {/* Estimation toggle — desktop only (mobile version is in the grid above) */}
-              <label className="hidden h-11 cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 select-none transition hover:bg-white/10 sm:flex sm:shrink-0">
+              <label className="hidden h-11 cursor-pointer items-center gap-2 rounded-lg border border-overlay/10 bg-overlay/5 px-3 select-none transition hover:bg-overlay/10 sm:flex sm:shrink-0">
                 <div
                   className={`relative h-4 w-8 shrink-0 rounded-full transition-colors ${
-                    estimated ? 'bg-blue-500' : 'bg-gray-600'
+                    estimated ? 'bg-blue-500' : 'bg-control'
                   }`}
                 >
                   <div
@@ -529,7 +529,7 @@ export default function StatsPage() {
                     }`}
                   />
                 </div>
-                <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-blue-400' : 'text-gray-500'}`}>
+                <span className={`whitespace-nowrap text-xs font-medium ${estimated ? 'text-accent' : 'text-subtle'}`}>
                   {t.stats.estimations}
                 </span>
                 <input
@@ -548,7 +548,7 @@ export default function StatsPage() {
                 <span className="inline-block skew-x-12">{t.stats.search}</span>
               </button>
             </div>
-            <p className="mt-2 text-center text-[11px] text-gray-600">
+            <p className="mt-2 text-center text-[11px] text-subtle">
               {t.stats.nightLinesNote}
             </p>
           </form>
@@ -557,13 +557,13 @@ export default function StatsPage() {
         {/* Loading */}
         {isInitialLoading && (
           <div className="flex items-center justify-center py-20">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-700 border-t-blue-500" />
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-control border-t-blue-500" />
           </div>
         )}
 
         {/* Error */}
         {hasError && !hasAnyData && !isLoading && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-red-400">
+          <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-negative">
             {getErrorMessage(firstError, language)}
           </div>
         )}
@@ -577,8 +577,8 @@ export default function StatsPage() {
                   <div key={item.title} className="flex gap-3">
                     <div className="mt-1 h-3 w-3 shrink-0 rounded-full bg-blue-500 shadow-sm shadow-blue-500/40" />
                     <div>
-                      <dt className="text-base font-bold text-white sm:text-lg">{item.title}</dt>
-                      <dd className="mt-1 text-sm leading-relaxed text-gray-400">{item.text}</dd>
+                      <dt className="text-base font-bold text-ink sm:text-lg">{item.title}</dt>
+                      <dd className="mt-1 text-sm leading-relaxed text-muted">{item.text}</dd>
                     </div>
                   </div>
                 ))}
@@ -647,7 +647,7 @@ export default function StatsPage() {
                 trend.data.days.length >= 2 ? (
                   <TrendChart data={trend.data} />
                 ) : (
-                  <p className="py-8 text-center text-sm text-gray-500">
+                  <p className="py-8 text-center text-sm text-subtle">
                     {t.stats.notEnoughTrendData}
                   </p>
                 )

@@ -4,6 +4,10 @@ export type Language = 'pl' | 'en';
 
 const pl = {
   locale: 'pl-PL',
+  theme: {
+    switchToLight: 'Włącz jasny motyw',
+    switchToDark: 'Włącz ciemny motyw',
+  },
   meta: {
     title: 'KRK Transit | Mapa live i statystyki',
   },
@@ -212,6 +216,10 @@ export type Dictionary = typeof pl;
 
 const en: Dictionary = {
   locale: 'en-GB',
+  theme: {
+    switchToLight: 'Switch to light theme',
+    switchToDark: 'Switch to dark theme',
+  },
   meta: {
     title: 'KRK Transit | Live Map & Statistics',
   },

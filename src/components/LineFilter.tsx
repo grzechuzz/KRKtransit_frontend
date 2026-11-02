@@ -68,14 +68,14 @@ export default function LineFilter({
             setLegendOpen(false);
             onToggleOpen();
           }}
-          className="flex cursor-pointer items-center gap-2 rounded-xl bg-gray-900/90 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm transition hover:bg-gray-800/90"
+          className="flex cursor-pointer items-center gap-2 rounded-xl bg-surface/90 px-4 py-2 text-sm font-medium text-ink shadow-lg backdrop-blur-sm transition hover:bg-raised/90"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M1 3h14M3 8h10M5 13h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           {t.lineFilter.filter}
           {!allActive && (
-            <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-xs">
+            <span className="rounded-full bg-blue-600 px-1.5 py-0.5 text-xs text-white">
               {[...activeLines].filter((l) => l !== '__none__').length}
             </span>
           )}
@@ -86,7 +86,7 @@ export default function LineFilter({
             if (isOpen) onToggleOpen();
             setLegendOpen((p) => !p);
           }}
-          className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-gray-900/90 px-3 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-sm transition hover:bg-gray-800/90"
+          className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-surface/90 px-3 py-2 text-sm font-medium text-ink shadow-lg backdrop-blur-sm transition hover:bg-raised/90"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
@@ -97,17 +97,17 @@ export default function LineFilter({
       </div>
 
       {isOpen && (
-        <div className="mt-2 flex min-h-0 w-72 flex-col overflow-hidden rounded-xl bg-gray-900/95 p-3 shadow-2xl backdrop-blur-sm sm:max-h-[60vh] sm:w-80">
-          <div className="mb-2 grid shrink-0 grid-cols-2 gap-1.5 border-b border-white/10 pb-2">
+        <div className="mt-2 flex min-h-0 w-72 flex-col overflow-hidden rounded-xl bg-surface/95 p-3 shadow-panel backdrop-blur-sm sm:max-h-[60vh] sm:w-80">
+          <div className="mb-2 grid shrink-0 grid-cols-2 gap-1.5 border-b border-overlay/10 pb-2">
             <button
               onClick={onShowAll}
-              className="cursor-pointer rounded-lg bg-white/10 py-1.5 text-xs font-medium text-gray-300 transition hover:bg-white/20"
+              className="cursor-pointer rounded-lg bg-overlay/10 py-1.5 text-xs font-medium text-body transition hover:bg-overlay/20"
             >
               {t.lineFilter.all}
             </button>
             <button
               onClick={onHideAll}
-              className="cursor-pointer rounded-lg bg-white/10 py-1.5 text-xs font-medium text-gray-300 transition hover:bg-white/20"
+              className="cursor-pointer rounded-lg bg-overlay/10 py-1.5 text-xs font-medium text-body transition hover:bg-overlay/20"
             >
               {t.lineFilter.clear}
             </button>
@@ -121,11 +121,13 @@ export default function LineFilter({
                 <button
                   key={line}
                   onClick={() => onToggle(line)}
+                  aria-pressed={isActive}
                   className="cursor-pointer rounded-lg py-1 text-xs font-bold text-white transition"
                   style={{
                     backgroundColor: isActive ? color : 'transparent',
+                    color: isActive ? '#ffffff' : 'var(--app-body)',
                     border: `2px solid ${color}`,
-                    opacity: isActive ? 1 : 0.35,
+                    opacity: isActive ? 1 : 0.65,
                   }}
                 >
                   {line}
@@ -137,10 +139,10 @@ export default function LineFilter({
       )}
 
       {legendOpen && (
-        <div className="mt-2 w-64 rounded-xl bg-gray-900/95 p-4 shadow-2xl backdrop-blur-sm sm:w-72">
+        <div className="mt-2 w-64 rounded-xl bg-surface/95 p-4 shadow-panel backdrop-blur-sm sm:w-72">
           {legend.map((group, gi) => (
-            <div key={group.group} className={gi > 0 ? 'mt-3 border-t border-white/5 pt-3' : ''}>
-              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
+            <div key={group.group} className={gi > 0 ? 'mt-3 border-t border-overlay/5 pt-3' : ''}>
+              <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-subtle">
                 {group.group}
               </p>
               <div className="space-y-1.5">
@@ -150,7 +152,7 @@ export default function LineFilter({
                       className="inline-block h-3 w-3 shrink-0 rounded-full shadow-sm"
                       style={{ backgroundColor: cat.color, boxShadow: `0 0 6px ${cat.color}66` }}
                     />
-                    <span className="text-xs text-gray-300">{cat.label}</span>
+                    <span className="text-xs text-body">{cat.label}</span>
                   </div>
                 ))}
               </div>
