@@ -4,6 +4,10 @@ export type Language = 'pl' | 'en';
 
 const pl = {
   locale: 'pl-PL',
+  theme: {
+    switchToLight: 'Włącz jasny motyw',
+    switchToDark: 'Włącz ciemny motyw',
+  },
   meta: {
     title: 'KRK Transit | Mapa live i statystyki',
   },
@@ -52,6 +56,19 @@ const pl = {
     updated: 'Aktualizacja',
     secondsAgo: (seconds: number) => `${seconds} sek temu`,
     minutesAgo: (minutes: number, seconds: number) => `${minutes} min ${seconds} sek temu`,
+    upcomingStops: 'Najbliższe przystanki',
+    expandStops: 'Rozwiń',
+    collapseStops: 'Zwiń',
+    stop: 'Przystanek',
+    scheduled: 'Rozkład',
+    predicted: 'Predykcja',
+    predictionNote: 'Predykcja dostępna dla linii: 139, 163, 179, 304 i 578.',
+    loadingStops: 'Ładowanie przystanków…',
+    tripFinished: 'Kurs zakończony',
+    progressUnknown: 'Brak danych o postępie',
+    noUpcomingStops: 'Brak kolejnych przystanków',
+    noData: 'Brak danych',
+    stopsError: 'Nie udało się pobrać przystanków. Spróbujemy ponownie za chwilę.',
   },
   info: {
     sourcesTitle: 'Źródła danych',
@@ -79,7 +96,7 @@ const pl = {
   stats: {
     loading: 'Ładowanie...',
     selectedRange: 'Wybrany zakres',
-    lineRange: (line: string, start: string, end: string) => `Linia ${line} · ${start} — ${end}`,
+    lineRange: (line: string, start: string, end: string) => `Linia ${line} · ${start === end ? start : `${start} — ${end}`}`,
     nightLinesNote: 'Linie nocne zaliczają się do poprzedniego dnia serwisowego',
     title: 'Statystyki',
     lineNumber: 'Numer linii',
@@ -89,7 +106,7 @@ const pl = {
     to: 'Do',
     estimations: 'Estymacje',
     includeEstimations: 'Uwzględnij estymacje',
-    estimationsHelp: 'Dane estymowane — mogą być mniej dokładne niż potwierdzone odczyty. Dostępne od 19.03.2026.',
+    estimationsHelp: 'Dane estymowane mogą być mniej dokładne niż potwierdzone odczyty.',
     search: 'Szukaj',
     methodologyTitle: 'Jak to działa?',
     expandMethodology: 'Kliknij, aby rozwinąć',
@@ -105,7 +122,7 @@ const pl = {
       },
       {
         title: 'Opcjonalne estymacje',
-        text: 'Przełącznik "Estymacje" pozwala dodatkowo uwzględnić przybliżone czasy oszacowane przez system w sytuacjach, gdy pojazd nie zarejestrował fizycznego zatrzymania. Estymacje przechodzą walidację, ale i tak mogą zawierać większy margines błędu niż dane bezpośrednie. Dane estymowane dostępne są od 19.03.2026.',
+        text: 'Przełącznik "Estymacje" pozwala dodatkowo uwzględnić przybliżone czasy oszacowane przez system w sytuacjach, gdy pojazd nie zarejestrował fizycznego zatrzymania. Estymacje przechodzą walidację, ale i tak mogą zawierać większy margines błędu niż dane bezpośrednie.',
       },
     ],
     punctualityTitle: 'Punktualność',
@@ -127,6 +144,13 @@ const pl = {
   },
   tables: {
     estimated: 'Estymowany',
+    dates: 'Daty',
+    serviceDateLabel: 'Serwisowa',
+    actualDateLabel: 'Rzeczywista',
+    start: 'Początek',
+    end: 'Koniec',
+    plannedMobile: 'Planowe',
+    actualMobile: 'Rzeczywiste',
     noDelayData: 'Brak danych o opóźnieniach dla wybranego zakresu.',
     segment: 'Odcinek',
     route: 'Trasa',
@@ -199,6 +223,10 @@ export type Dictionary = typeof pl;
 
 const en: Dictionary = {
   locale: 'en-GB',
+  theme: {
+    switchToLight: 'Switch to light theme',
+    switchToDark: 'Switch to dark theme',
+  },
   meta: {
     title: 'KRK Transit | Live Map & Statistics',
   },
@@ -247,6 +275,19 @@ const en: Dictionary = {
     updated: 'Updated',
     secondsAgo: (seconds: number) => `${seconds}s ago`,
     minutesAgo: (minutes: number, seconds: number) => `${minutes}m ${seconds}s ago`,
+    upcomingStops: 'Upcoming stops',
+    expandStops: 'Show',
+    collapseStops: 'Hide',
+    stop: 'Stop',
+    scheduled: 'Schedule',
+    predicted: 'Prediction',
+    predictionNote: 'Predictions available for lines: 139, 163, 179, 304 and 578.',
+    loadingStops: 'Loading stops…',
+    tripFinished: 'Trip finished',
+    progressUnknown: 'No trip progress data',
+    noUpcomingStops: 'No upcoming stops',
+    noData: 'No data',
+    stopsError: 'Could not load stops. We’ll try again shortly.',
   },
   info: {
     sourcesTitle: 'Data sources',
@@ -274,7 +315,7 @@ const en: Dictionary = {
   stats: {
     loading: 'Loading...',
     selectedRange: 'Selected range',
-    lineRange: (line: string, start: string, end: string) => `Line ${line} · ${start} — ${end}`,
+    lineRange: (line: string, start: string, end: string) => `Line ${line} · ${start === end ? start : `${start} — ${end}`}`,
     nightLinesNote: 'Night lines count toward the previous service day',
     title: 'Statistics',
     lineNumber: 'Line number',
@@ -284,7 +325,7 @@ const en: Dictionary = {
     to: 'To',
     estimations: 'Estimations',
     includeEstimations: 'Include estimations',
-    estimationsHelp: 'Estimated data may be less accurate than confirmed readings. Available since 19.03.2026.',
+    estimationsHelp: 'Estimated data may be less accurate than confirmed readings.',
     search: 'Search',
     methodologyTitle: 'How it works',
     expandMethodology: 'Click to expand',
@@ -300,7 +341,7 @@ const en: Dictionary = {
       },
       {
         title: 'Optional estimations',
-        text: 'The "Estimations" switch can additionally include approximate times calculated by the system when the vehicle did not register a physical stop. Estimations are validated, but they can still have a wider margin of error than direct readings. Estimated data is available since 19.03.2026.',
+        text: 'The "Estimations" switch can additionally include approximate times calculated by the system when the vehicle did not register a physical stop. Estimations are validated, but they can still have a wider margin of error than direct readings.',
       },
     ],
     punctualityTitle: 'Punctuality',
@@ -322,6 +363,13 @@ const en: Dictionary = {
   },
   tables: {
     estimated: 'Estimated',
+    dates: 'Dates',
+    serviceDateLabel: 'Service',
+    actualDateLabel: 'Actual',
+    start: 'Start',
+    end: 'End',
+    plannedMobile: 'Scheduled',
+    actualMobile: 'Actual',
     noDelayData: 'No delay data for the selected range.',
     segment: 'Segment',
     route: 'Route',

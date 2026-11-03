@@ -12,16 +12,16 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     <div className="flex h-full items-center justify-center overflow-y-auto px-4">
       <div className="w-full max-w-2xl py-12 text-center">
         {/* Brand */}
-        <h1 className="mb-2 text-5xl font-black uppercase tracking-wide text-white sm:text-7xl">
+        <h1 className="mb-2 text-5xl font-black uppercase tracking-wide text-ink sm:text-7xl">
           KRK
-          <span className="ml-2 font-light tracking-wider text-blue-400">TRANSIT</span>
+          <span className="ml-2 font-light tracking-wider text-accent">TRANSIT</span>
         </h1>
 
         {/* Accent line */}
         <div className="mx-auto mb-10 h-1 w-24 -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/40 sm:w-32" />
 
         {/* Description */}
-        <p className="mx-auto mb-12 max-w-lg text-lg leading-relaxed text-gray-300 sm:text-xl">
+        <p className="mx-auto mb-12 max-w-lg text-lg leading-relaxed text-body sm:text-xl">
           {t.home.description}
         </p>
 
@@ -32,15 +32,15 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             className="group relative -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 w-52 py-4 text-center text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30"
           >
             <span className="relative z-10 inline-block skew-x-12">{t.home.mapCta}</span>
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-overlay/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
           </button>
 
           <button
             onClick={() => onNavigate('stats')}
-            className="group relative -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-white/5 w-52 py-4 text-center text-sm font-bold uppercase tracking-widest text-gray-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white"
+            className="group relative -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-overlay/5 w-52 py-4 text-center text-sm font-bold uppercase tracking-widest text-ink ring-1 ring-overlay/10 transition hover:bg-overlay/10"
           >
             <span className="relative z-10 inline-block skew-x-12">{t.home.statsCta}</span>
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-overlay/5 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
           </button>
         </div>
       </div>

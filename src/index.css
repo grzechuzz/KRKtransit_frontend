@@ -1,6 +1,67 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+:root {
+  color-scheme: dark;
+  --app-canvas: #030712;
+  --app-surface: #111827;
+  --app-raised: #1f2937;
+  --app-control: #374151;
+  --app-ink: #ffffff;
+  --app-strong: #f3f4f6;
+  --app-body: #e5e7eb;
+  --app-muted: #9ca3af;
+  --app-subtle: #8994a6;
+  --app-overlay: #ffffff;
+  --app-accent: #60a5fa;
+  --app-accent-strong: #93c5fd;
+  --app-positive: #4ade80;
+  --app-warning: #facc15;
+  --app-negative: #f87171;
+  --app-scrollbar: #4b5563;
+  --app-panel-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --app-canvas: #f3f6fb;
+  --app-surface: #ffffff;
+  --app-raised: #e9eff8;
+  --app-control: #cbd5e1;
+  --app-ink: #0f172a;
+  --app-strong: #1e293b;
+  --app-body: #334155;
+  --app-muted: #475569;
+  --app-subtle: #64748b;
+  --app-overlay: #0f172a;
+  --app-accent: #1d4ed8;
+  --app-accent-strong: #1e40af;
+  --app-positive: #15803d;
+  --app-warning: #854d0e;
+  --app-negative: #b91c1c;
+  --app-scrollbar: #94a3b8;
+  --app-panel-shadow: 0 12px 32px -8px rgb(15 23 42 / 0.14);
+}
+
+@theme inline {
+  --color-canvas: var(--app-canvas);
+  --color-surface: var(--app-surface);
+  --color-raised: var(--app-raised);
+  --color-control: var(--app-control);
+  --color-ink: var(--app-ink);
+  --color-strong: var(--app-strong);
+  --color-body: var(--app-body);
+  --color-muted: var(--app-muted);
+  --color-subtle: var(--app-subtle);
+  --color-overlay: var(--app-overlay);
+  --color-accent: var(--app-accent);
+  --color-accent-strong: var(--app-accent-strong);
+  --color-positive: var(--app-positive);
+  --color-warning: var(--app-warning);
+  --color-negative: var(--app-negative);
+  --shadow-panel: var(--app-panel-shadow);
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
@@ -9,7 +70,17 @@ html, body, #root {
   overflow: hidden;
   overscroll-behavior: none;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #030712;
+  background-color: var(--app-canvas);
+  color: var(--app-ink);
+}
+
+* {
+  scrollbar-color: var(--app-scrollbar) var(--app-surface);
+}
+
+:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 3px;
 }
 
 @keyframes blinker {
@@ -22,10 +93,10 @@ html, body, #root {
 }
 
 .leaflet-container {
-  background: #1f2937;
+  background: var(--app-raised);
 }
 
-.leaflet-tile-pane {
+:root:not([data-theme="light"]) .leaflet-tile-pane {
   filter: invert(0.92) hue-rotate(180deg) brightness(0.9) contrast(1.12) saturate(0.55);
 }
 
@@ -36,14 +107,33 @@ html, body, #root {
 }
 
 .leaflet-control-zoom a {
-  background-color: #111827 !important;
-  color: #d1d5db !important;
-  border-color: #374151 !important;
+  background-color: var(--app-surface) !important;
+  color: var(--app-body) !important;
+  border-color: var(--app-control) !important;
 }
 
 .leaflet-control-zoom a:hover {
-  background-color: #1f2937 !important;
-  color: #f9fafb !important;
+  background-color: var(--app-raised) !important;
+  color: var(--app-ink) !important;
+}
+
+.leaflet-tooltip,
+.leaflet-control-attribution {
+  background: var(--app-surface) !important;
+  color: var(--app-body) !important;
+  border-color: var(--app-control);
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: var(--app-control);
+}
+
+.leaflet-control-attribution a {
+  color: var(--app-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blinker { animation: none; }
 }
 
 /* Safari/WebKit date inputs – kill intrinsic min-width */

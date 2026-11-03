@@ -2,6 +2,7 @@ import type {
   LiveVehicleResponse,
   ShapeResponse,
   TripStopsResponse,
+  UpcomingStopsResponse,
   PunctualityResponse,
   MaxDelayResponse,
   RouteDelayResponse,
@@ -84,6 +85,8 @@ function formatValidationIssue(issue: unknown, language: Language): string | nul
   const type = asString(issue.type);
   const lowerMsg = msg?.toLowerCase() ?? '';
 
+  if (label && type === 'missing') return api.required(label);
+
   if (label && lowerMsg.includes('valid date')) {
     return api.validDate(label);
   }
@@ -140,7 +143,7 @@ async function readErrorBody(response: Response): Promise<unknown> {
   try {
     return JSON.parse(text) as unknown;
   } catch {
-    return { message: text };
+    return null;
   }
 }
 
@@ -196,7 +199,11 @@ async function fetchJson<T>(url: string, language: Language = DEFAULT_LANGUAGE):
     throw new ApiClientError(message, response.status, errorCode);
   }
 
-  return response.json() as Promise<T>;
+  try {
+    return await response.json() as T;
+  } catch {
+    throw new ApiClientError(apiMessages(language).getDataFallback, response.status);
+  }
 }
 
 export function fetchVehiclePositions(language: Language = DEFAULT_LANGUAGE): Promise<LiveVehicleResponse> {
@@ -209,6 +216,10 @@ export function fetchShape(shapeId: string, language: Language = DEFAULT_LANGUAG
 
 export function fetchTripStops(tripId: string, language: Language = DEFAULT_LANGUAGE): Promise<TripStopsResponse> {
   return fetchJson<TripStopsResponse>(`${BASE_URL}/trips/${encodeURIComponent(tripId)}/stops`, language);
+}
+
+export function fetchUpcomingStops(tripId: string, language: Language = DEFAULT_LANGUAGE): Promise<UpcomingStopsResponse> {
+  return fetchJson<UpcomingStopsResponse>(`${BASE_URL}/trips/${encodeURIComponent(tripId)}/upcoming-stops`, language);
 }
 
 function statsParams(startDate: string, endDate: string, includeEstimated: boolean): URLSearchParams {

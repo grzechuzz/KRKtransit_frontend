@@ -23,6 +23,11 @@ Dane mapy i statystyk wymagają połączenia z API.
 
 ## Sprawdzenie zmian
 
+Widoki mają osobne adresy: `/map`, `/stats` i `/about`.
+Odświeżenie zachowuje wybrany widok; działają też przyciski Wstecz/Dalej
+oraz bezpośrednie linki. Hosting musi zwracać `index.html` dla nieznanych
+ścieżek; Vite robi to w `npm run dev` i `npm run preview`.
+
 ```bash
 npm run lint
 npm run build

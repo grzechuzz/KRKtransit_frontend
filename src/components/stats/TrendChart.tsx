@@ -72,7 +72,7 @@ export default function TrendChart({ data }: TrendChartProps) {
 
   if (!bars.length) {
     return (
-      <p className="py-8 text-center text-sm text-gray-500">
+      <p className="py-8 text-center text-sm text-subtle">
         {t.trend.noData}
       </p>
     );
@@ -84,18 +84,14 @@ export default function TrendChart({ data }: TrendChartProps) {
 
   return (
     <div translate="no">
-      {/* Tooltip - fixed above chart */}
-      <div className="mb-2 flex h-8 items-center justify-center">
+      <div className="relative rounded-lg border border-overlay/10 bg-surface p-3 sm:p-5">
         {activeBar !== null && (
-          <p className="rounded-lg bg-gray-800 px-3 py-1 text-xs ring-1 ring-white/10">
-            <span className="font-bold text-white">{formatDelay(bars[activeBar].value, language)}</span>
-            <span className="mx-1.5 text-gray-600">|</span>
-            <span className="text-gray-400">{t.trend.trips(bars[activeBar].trips.toLocaleString(locale))}</span>
+          <p className="pointer-events-none absolute top-2 left-1/2 z-10 max-w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg bg-raised px-3 py-1 text-center text-xs shadow-sm ring-1 ring-overlay/10">
+            <span className="font-bold text-ink">{formatDelay(bars[activeBar].value, language)}</span>
+            <span className="mx-1.5 text-subtle">|</span>
+            <span className="text-muted">{t.trend.trips(bars[activeBar].trips.toLocaleString(locale))}</span>
           </p>
         )}
-      </div>
-
-      <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 sm:p-5">
         {/* Chart grid + bars */}
         <div className="flex gap-2 sm:gap-3">
 
@@ -104,7 +100,7 @@ export default function TrendChart({ data }: TrendChartProps) {
             {Array.from({ length: GRID_LINES + 1 }).map((_, i) => {
               const val = ceilingSeconds - (i / GRID_LINES) * ceilingSeconds;
               return (
-                <span key={i} className="text-right text-[9px] tabular-nums leading-none text-gray-600 sm:text-[11px]">
+                <span key={i} className="text-right text-[9px] tabular-nums leading-none text-subtle sm:text-[11px]">
                   {formatYLabel(val)}
                 </span>
               );
@@ -117,7 +113,7 @@ export default function TrendChart({ data }: TrendChartProps) {
             {Array.from({ length: GRID_LINES + 1 }).map((_, i) => (
               <div
                 key={i}
-                className="absolute left-0 right-0 h-px bg-white/5"
+                className="absolute left-0 right-0 h-px bg-overlay/5"
                 style={{ top: `${(i / GRID_LINES) * 100}%` }}
               />
             ))}
@@ -158,11 +154,11 @@ export default function TrendChart({ data }: TrendChartProps) {
                 key={i}
                 className="min-w-0 flex-1 text-center leading-tight"
               >
-                <span className="block truncate text-[9px] text-gray-500 sm:text-[11px]">
+                <span className="block truncate text-[9px] text-subtle sm:text-[11px]">
                   {bar.label}
                 </span>
                 {bar.sublabel && (
-                  <span className="block text-[7px] text-gray-600 sm:text-[9px]">
+                  <span className="block text-[7px] text-subtle sm:text-[9px]">
                     {bar.sublabel}
                   </span>
                 )}
@@ -172,7 +168,7 @@ export default function TrendChart({ data }: TrendChartProps) {
         </div>
       </div>
 
-      <p className="mt-3 text-center text-[10px] text-gray-600 sm:text-xs">
+      <p className="mt-3 text-center text-[10px] text-subtle sm:text-xs">
         {t.trend.footer(data.days.length)}
       </p>
     </div>
