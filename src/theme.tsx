@@ -2,10 +2,16 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ThemeContext, type Theme } from './theme-core';
 
+function readStoredTheme(): Theme {
+  try {
+    return window.localStorage.getItem('krk-transit-theme') === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() =>
-    document.documentElement.dataset.theme === 'light' ? 'light' : 'dark',
-  );
+  const [theme, setTheme] = useState<Theme>(readStoredTheme);
   const toggleTheme = useCallback(() => {
     setTheme((current) => current === 'dark' ? 'light' : 'dark');
   }, []);
