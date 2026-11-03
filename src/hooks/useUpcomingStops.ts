@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchUpcomingStops } from '../api/client';
 import { useI18n } from '../i18n-core';
 
-const REFRESH_INTERVAL_MS = 15_000;
+const REFRESH_INTERVAL_MS = 5_000;
 
 export function useUpcomingStops(tripId: string | null) {
   const { language } = useI18n();

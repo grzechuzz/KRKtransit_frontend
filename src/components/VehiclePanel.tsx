@@ -10,8 +10,6 @@ interface VehiclePanelProps {
   upcomingStops: ReturnType<typeof useUpcomingStops>;
 }
 
-const PREDICTION_LINES = new Set(['139', '163', '179', '304', '578']);
-
 const arrivalTimeFormatter = new Intl.DateTimeFormat('pl-PL', {
   timeZone: 'Europe/Warsaw',
   hour: '2-digit',
@@ -26,9 +24,8 @@ function ArrivalTime({ value }: { value: string | null }) {
   return <time dateTime={value}>{arrivalTimeFormatter.format(new Date(value))}</time>;
 }
 
-function UpcomingStops({ query, lineNumber, defaultExpanded = true }: {
+function UpcomingStops({ query, defaultExpanded = true }: {
   query: VehiclePanelProps['upcomingStops'];
-  lineNumber: string;
   defaultExpanded?: boolean;
 }) {
   const { t } = useI18n();
@@ -53,7 +50,7 @@ function UpcomingStops({ query, lineNumber, defaultExpanded = true }: {
   }
 
   return (
-    <section className="mt-3 border-t border-overlay/10">
+    <section className={`mt-3 border-t border-overlay/10 ${expanded ? '' : 'sm:-mb-3'}`}>
       <h2>
         <button
           type="button"
@@ -63,9 +60,6 @@ function UpcomingStops({ query, lineNumber, defaultExpanded = true }: {
           className="flex min-h-11 w-full touch-manipulation cursor-pointer items-center gap-2 rounded-lg py-2 text-left text-sm font-semibold text-ink transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
         >
           <span className="min-w-0 flex-1">{labels.upcomingStops}</span>
-          {!message && data && (
-            <span className="rounded-md bg-overlay/5 px-1.5 py-0.5 text-xs tabular-nums text-muted">{data.stops.length}</span>
-          )}
           <span className="text-xs font-normal text-accent-strong">{expanded ? labels.collapseStops : labels.expandStops}</span>
           <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className={`h-4 w-4 shrink-0 text-accent-strong transition-transform motion-reduce:transition-none ${expanded ? 'rotate-180' : ''}`}>
             <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -111,9 +105,6 @@ function UpcomingStops({ query, lineNumber, defaultExpanded = true }: {
           </tbody>
         </table>
         </div>
-      )}
-      {!PREDICTION_LINES.has(lineNumber) && (
-        <p className="mt-2 text-xs leading-relaxed text-muted">{labels.predictionNote}</p>
       )}
       </div>
     </section>
@@ -172,7 +163,7 @@ export function MobileVehicleBar({ vehicle, onClose, upcomingStops }: VehiclePan
           X
         </button>
       </div>
-      <UpcomingStops key={vehicle.license_plate} query={upcomingStops} lineNumber={vehicle.line_number} defaultExpanded={false} />
+      <UpcomingStops key={vehicle.license_plate} query={upcomingStops} defaultExpanded={false} />
     </div>
   );
 }
@@ -205,7 +196,7 @@ export default function VehiclePanel({ vehicle, onClose, upcomingStops }: Vehicl
         <Row label={t.vehiclePanel.position} value={`${vehicle.latitude.toFixed(5)}, ${vehicle.longitude.toFixed(5)}`} />
         <Row label={t.vehiclePanel.updated} value={relTime} />
       </div>
-      <UpcomingStops key={vehicle.license_plate} query={upcomingStops} lineNumber={vehicle.line_number} />
+      <UpcomingStops key={vehicle.license_plate} query={upcomingStops} />
     </div>
   );
 }
