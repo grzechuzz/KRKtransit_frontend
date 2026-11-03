@@ -36,24 +36,38 @@ function hasDifferentActualDate(row: DelayResultRow) {
   return actualDate !== row.serviceDate;
 }
 
-function delayStyle(seconds: number) {
-  if (seconds < 0) return 'border-positive/15 bg-positive/10 text-positive';
-  if (seconds === 0) return 'border-overlay/10 bg-overlay/5 text-muted';
-  return seconds > 180
-    ? 'border-negative/15 bg-negative/10 text-negative'
-    : 'border-warning/15 bg-warning/10 text-warning';
+function delayColor(seconds: number) {
+  if (seconds < 0) return 'text-positive';
+  if (seconds === 0) return 'text-muted';
+  return seconds > 180 ? 'text-negative' : 'text-warning';
 }
 
-function DelayBadge({ row, centered = false }: { row: DelayResultRow; centered?: boolean }) {
+function delayBadgeStyle(seconds: number) {
+  if (seconds < 0) return 'border-positive/15 bg-positive/10';
+  if (seconds === 0) return 'border-overlay/10 bg-overlay/5';
+  return seconds > 180 ? 'border-negative/15 bg-negative/10' : 'border-warning/15 bg-warning/10';
+}
+
+function DelayValue({ row, plain = false }: { row: DelayResultRow; plain?: boolean }) {
   const { language, t } = useI18n();
+  const shape = plain
+    ? 'text-lg leading-7'
+    : `inline-flex rounded-lg border px-2.5 py-1 text-sm ${delayBadgeStyle(row.delaySeconds)}`;
   return (
-    <div className={`flex flex-col gap-1.5 ${centered ? 'items-center' : 'items-end'}`}>
-      <span
-        aria-label={`${t.tables.generatedTop} ${t.tables.generatedBottom}: ${formatSignedDelay(row.delaySeconds, language)}`}
-        className={`inline-flex whitespace-nowrap rounded-lg border px-2.5 py-1.5 text-sm font-bold tabular-nums ${delayStyle(row.delaySeconds)}`}
-      >
-        {formatSignedDelay(row.delaySeconds, language)}
-      </span>
+    <span
+      aria-label={`${t.tables.generatedTop} ${t.tables.generatedBottom}: ${formatSignedDelay(row.delaySeconds, language)}`}
+      className={`shrink-0 whitespace-nowrap font-bold tabular-nums ${shape} ${delayColor(row.delaySeconds)}`}
+    >
+      {formatSignedDelay(row.delaySeconds, language)}
+    </span>
+  );
+}
+
+function DelayBadge({ row }: { row: DelayResultRow }) {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <DelayValue row={row} />
       {row.estimated && <span className="text-xs font-medium text-muted">{t.tables.estimated}</span>}
     </div>
   );
@@ -87,10 +101,38 @@ function TimePair({ from, to }: { from: string; to: string }) {
   );
 }
 
+function StopTimeRow({ stop, label, planned, actual, last = false }: {
+  stop: string;
+  label: string;
+  planned: string;
+  actual: string;
+  last?: boolean;
+}) {
+  const { t, locale } = useI18n();
+  const format = (value: string) => new Date(value).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  return (
+    <>
+      <span aria-hidden="true" className="relative flex justify-center self-stretch pt-2.5">
+        <span className={`h-2 w-2 rounded-full ${last ? 'bg-accent' : 'border-2 border-accent bg-surface'}`} />
+        {!last && <span className="absolute top-4.5 -bottom-3.5 left-1/2 w-px -translate-x-1/2 bg-accent/25" />}
+      </span>
+      <span className="min-w-0 break-words text-base font-semibold leading-7 text-ink">
+        <span className="sr-only">{label}: </span>{stop}
+      </span>
+      <span className="whitespace-nowrap text-right text-sm leading-7 tabular-nums text-muted">
+        <span className="sr-only">{t.tables.plannedMobile}: </span><time dateTime={planned}>{format(planned)}</time>
+      </span>
+      <span className="whitespace-nowrap text-right text-lg font-bold leading-7 tabular-nums text-ink">
+        <span className="sr-only">{t.tables.actualMobile}: </span><time dateTime={actual}>{format(actual)}</time>
+      </span>
+    </>
+  );
+}
+
 export default function DelayResults({ rows, tripsAnalyzed, kind }: DelayResultsProps) {
   const { t, locale } = useI18n();
   const date = (value: string) => new Date(value).toLocaleDateString(locale, { timeZone: 'Europe/Warsaw', day: '2-digit', month: '2-digit' });
-  const time = (value: string) => new Date(value).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  const fullDate = (value: string) => new Date(value).toLocaleDateString(locale, { timeZone: 'Europe/Warsaw', day: '2-digit', month: '2-digit', year: 'numeric' });
   const title = kind === 'segment' ? t.stats.betweenStopsTitle : t.stats.routeDelayTitle;
   if (!rows.length) return <p className="py-8 text-center text-sm text-subtle">{t.tables.noDelayData}</p>;
 
@@ -141,67 +183,51 @@ export default function DelayResults({ rows, tripsAnalyzed, kind }: DelayResults
                 </td>
                 <td className="px-3 py-5 text-muted"><TimePair from={row.fromPlannedTime} to={row.toPlannedTime} /></td>
                 <td className="px-3 py-5 font-semibold text-ink"><TimePair from={row.fromEventTime} to={row.toEventTime} /></td>
-                <td className="px-4 py-5"><DelayBadge row={row} centered /></td>
+                <td className="px-4 py-5"><DelayBadge row={row} /></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <ol aria-label={title} className="space-y-3 lg:hidden">
+      <ol aria-label={title} className="space-y-2.5 lg:hidden">
         {rows.map((row, index) => (
-          <li key={row.id} className="min-w-0 rounded-2xl border border-overlay/10 bg-surface p-4">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div className="flex min-w-0 flex-wrap items-center gap-2 pt-1">
-                <span className="text-xs font-semibold tabular-nums text-subtle">#{index + 1}</span>
-                <span className="max-w-full break-words rounded-md bg-overlay/5 px-2 py-1 text-xs font-semibold text-body">
+          <li key={row.id} className="min-w-0 rounded-2xl border border-overlay/10 bg-surface px-3.5 py-3">
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-sm font-semibold tabular-nums text-subtle">#{index + 1}</span>
+                <span className="max-w-full break-words rounded-md bg-overlay/5 px-2 py-0.5 text-sm font-semibold text-body">
                   <span className="sr-only">{t.tables.vehicleNumber}: </span>{row.vehicleNumber}
                 </span>
+                {row.estimated && (
+                  <span title={t.tables.estimated} className="rounded-md border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-sm font-bold tracking-wide text-accent-strong">
+                    <span aria-hidden="true">EST</span><span className="sr-only">{t.tables.estimated}</span>
+                  </span>
+                )}
               </div>
-              <DelayBadge row={row} />
+              <DelayValue row={row} plain />
             </div>
-            <StopPair from={row.fromStop} to={row.toStop} />
-            <p className="mt-3 break-words text-xs leading-relaxed text-muted">
-              {t.tables.direction}: <span className="font-medium text-body">{row.direction}</span>
-            </p>
-
-            <div className="mt-4 overflow-hidden rounded-xl border border-overlay/5 bg-canvas/70 px-3 py-2">
-              <table className="w-full table-fixed text-sm tabular-nums">
-                <caption className="sr-only">{t.tables.departureComparison}</caption>
-                <colgroup><col /><col className="w-[4.5rem]" /><col className="w-[5rem]" /></colgroup>
-                <thead className="text-xs text-muted">
-                  <tr>
-                    <td />
-                    <th scope="col" className="py-2 text-center font-medium">{t.tables.plannedMobile}</th>
-                    <th scope="col" className="py-2 text-center font-medium">{t.tables.actualMobile}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-overlay/5">
-                  <tr>
-                    <th scope="row" className="py-2 text-left text-xs font-medium text-muted">{t.tables.start}</th>
-                    <td className="py-2 text-center text-body"><time dateTime={row.fromPlannedTime}>{time(row.fromPlannedTime)}</time></td>
-                    <td className="py-2 text-center font-semibold text-ink"><time dateTime={row.fromEventTime}>{time(row.fromEventTime)}</time></td>
-                  </tr>
-                  <tr>
-                    <th scope="row" className="py-2 text-left text-xs font-medium text-muted">{t.tables.end}</th>
-                    <td className="py-2 text-center text-body"><time dateTime={row.toPlannedTime}>{time(row.toPlannedTime)}</time></td>
-                    <td className="py-2 text-center font-semibold text-ink"><time dateTime={row.toEventTime}>{time(row.toEventTime)}</time></td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="grid grid-cols-[0.75rem_minmax(0,1fr)_auto_auto] items-baseline gap-x-2 gap-y-1">
+              <StopTimeRow stop={row.fromStop} label={t.tables.start} planned={row.fromPlannedTime} actual={row.fromEventTime} />
+              <StopTimeRow stop={row.toStop} label={t.tables.end} planned={row.toPlannedTime} actual={row.toEventTime} last />
             </div>
-            <dl className="mt-4 flex flex-col items-center gap-2 border-t border-overlay/10 pt-3 text-center text-xs">
-              <div className="space-y-1">
-                <dt className="text-subtle">{t.tables.serviceDateTop} {t.tables.serviceDateBottom}</dt>
-                <dd className="text-sm font-medium tabular-nums text-body"><time dateTime={row.serviceDate}>{date(row.serviceDate)}</time></dd>
-              </div>
-              {hasDifferentActualDate(row) && (
-                <div className="space-y-0.5">
-                  <dt className="text-subtle">{t.tables.actualDateLabel}</dt>
-                  <dd className="tabular-nums text-body"><time dateTime={row.fromEventTime}>{date(row.fromEventTime)}</time></dd>
+            <div className="mt-2.5 flex items-baseline justify-between gap-3 text-sm text-muted">
+              <p className="min-w-0 break-words">
+                <span aria-hidden="true">→ </span><span className="sr-only">{t.tables.direction}: </span>{row.direction}
+              </p>
+              <dl className="shrink-0 text-right tabular-nums">
+                <div>
+                  <dt className="sr-only">{t.tables.serviceDateTop} {t.tables.serviceDateBottom}</dt>
+                  <dd><time dateTime={row.serviceDate}>{fullDate(row.serviceDate)}</time></dd>
                 </div>
-              )}
-            </dl>
+                {hasDifferentActualDate(row) && (
+                  <div className="flex justify-end gap-1 text-subtle">
+                    <dt>{t.tables.actualDateLabel}:</dt>
+                    <dd><time dateTime={row.fromEventTime}>{date(row.fromEventTime)}</time></dd>
+                  </div>
+                )}
+              </dl>
+            </div>
           </li>
         ))}
       </ol>

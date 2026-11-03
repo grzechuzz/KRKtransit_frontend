@@ -16,6 +16,8 @@ function localDateStr(d: Date): string {
 
 const DEFAULT_STATS_RANGE_DAYS = 7;
 const MIN_STATS_DATE = '2026-03-11';
+const MAX_LINE_LENGTH = 5;
+const LINE_PATTERN = /^[a-zA-Z0-9]{1,5}$/;
 
 function clampStatsDate(value: string, maxDate: string): string {
   if (!value) return value;
@@ -31,6 +33,35 @@ function getDefaultDates() {
     start: localDateStr(weekAgo),
     end: localDateStr(today),
   };
+}
+
+interface StatsQuery {
+  line: string;
+  start: string;
+  end: string;
+  estimated: boolean;
+}
+
+function readDateParam(value: string | null, fallback: string, maxDate: string): string {
+  const valid = value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+  return valid ? clampStatsDate(value, maxDate) : fallback;
+}
+
+function readStatsUrl(maxDate: string): StatsQuery {
+  const params = new URLSearchParams(window.location.search);
+  const defaults = getDefaultDates();
+  return {
+    line: (params.get('line') ?? '').trim().slice(0, MAX_LINE_LENGTH),
+    start: readDateParam(params.get('from'), defaults.start, maxDate),
+    end: readDateParam(params.get('to'), defaults.end, maxDate),
+    estimated: params.get('estimated') === '1',
+  };
+}
+
+function writeStatsUrl({ line, start, end, estimated }: StatsQuery) {
+  const params = new URLSearchParams({ line, from: start, to: end });
+  if (estimated) params.set('estimated', '1');
+  window.history.replaceState(null, '', `${window.location.pathname}?${params}`);
 }
 
 function formatDateLabel(value: string, locale: string): string {
@@ -132,7 +163,7 @@ function SectionHeader({ title, subtitle, tooltip, badge }: { title: string; sub
   return (
     <div className="mb-5">
       <div className="flex items-center gap-3">
-        <div className="w-1.5 self-stretch -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
+        <div className="h-7 w-1.5 shrink-0 -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
         {badge && (
           <span className="-skew-x-12 shrink-0 whitespace-nowrap rounded bg-blue-600 px-2.5 py-1 text-sm font-black tracking-widest text-white shadow-lg shadow-blue-600/30 sm:px-2.5 sm:py-0.5 sm:text-xs">
             <span className="inline-block skew-x-12">{badge}</span>
@@ -184,7 +215,7 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
         className="group mb-6 w-full cursor-pointer text-left"
       >
         <div className="flex items-center gap-3">
-          <div className="w-1.5 self-stretch -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
+          <div className="h-7 w-1.5 shrink-0 -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
           <h2 className="text-lg font-black uppercase tracking-wide text-ink sm:text-xl">
             {t.stats.methodologyTitle}
           </h2>
@@ -228,19 +259,15 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
 export default function StatsPage() {
   const { language, t, locale } = useI18n();
   const maxStatsDate = localDateStr(new Date());
-  const defaults = getDefaultDates();
-  const [lineInput, setLineInput] = useState('');
-  const [startDate, setStartDate] = useState(defaults.start);
-  const [endDate, setEndDate] = useState(defaults.end);
-  const [estimated, setEstimated] = useState(false);
+  const [initial] = useState(() => readStatsUrl(maxStatsDate));
+  const [lineInput, setLineInput] = useState(initial.line);
+  const [startDate, setStartDate] = useState(initial.start);
+  const [endDate, setEndDate] = useState(initial.end);
+  const [estimated, setEstimated] = useState(initial.estimated);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const [query, setQuery] = useState<{
-    line: string;
-    start: string;
-    end: string;
-    estimated: boolean;
-  } | null>(null);
+  const [query, setQuery] = useState<StatsQuery | null>(LINE_PATTERN.test(initial.line) ? initial : null);
+  const [lineInvalid, setLineInvalid] = useState(initial.line !== '' && !LINE_PATTERN.test(initial.line));
 
   const scrolledQueryRef = useRef<typeof query>(null);
 
@@ -258,12 +285,20 @@ export default function StatsPage() {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     if (!canSubmit) return;
-    setQuery({
-      line: lineInput.trim(),
+    const line = lineInput.trim();
+    if (!LINE_PATTERN.test(line)) {
+      setLineInvalid(true);
+      return;
+    }
+    setLineInvalid(false);
+    const submitted = {
+      line,
       start: clampStatsDate(startDate, maxStatsDate),
       end: clampStatsDate(endDate, maxStatsDate),
       estimated,
-    });
+    };
+    setQuery(submitted);
+    writeStatsUrl(submitted);
   };
 
   const punctuality = useQuery({
@@ -351,9 +386,13 @@ export default function StatsPage() {
                     id="line-hero"
                     type="text"
                     value={lineInput}
-                    onChange={(e) => setLineInput(e.target.value)}
+                    onChange={(e) => {
+                      setLineInput(e.target.value);
+                      setLineInvalid(false);
+                    }}
+                    aria-invalid={lineInvalid}
                     placeholder="304"
-                    maxLength={5}
+                    maxLength={MAX_LINE_LENGTH}
                     autoComplete="off"
                     className="h-14 w-full rounded-lg border border-overlay/10 bg-overlay/5 px-5 text-2xl font-black text-ink placeholder-subtle outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-3xl"
                   />
@@ -429,7 +468,12 @@ export default function StatsPage() {
                 <span className="relative z-10 inline-block skew-x-12">{t.stats.search}</span>
                 <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-overlay/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
               </button>
-              {hasError && !hasAnyData && !isLoading && (
+              {lineInvalid && (
+                <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-negative">
+                  {t.api.linePattern}
+                </div>
+              )}
+              {!lineInvalid && hasError && !hasAnyData && !isLoading && (
                 <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-negative">
                   {getErrorMessage(firstError, language)}
                 </div>

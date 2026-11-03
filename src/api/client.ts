@@ -141,7 +141,7 @@ async function readErrorBody(response: Response): Promise<unknown> {
   try {
     return JSON.parse(text) as unknown;
   } catch {
-    return { message: text };
+    return null;
   }
 }
 
