@@ -84,18 +84,14 @@ export default function TrendChart({ data }: TrendChartProps) {
 
   return (
     <div translate="no">
-      {/* Tooltip - fixed above chart */}
-      <div className="mb-2 flex h-8 items-center justify-center">
+      <div className="relative rounded-lg border border-overlay/10 bg-surface p-3 sm:p-5">
         {activeBar !== null && (
-          <p className="rounded-lg bg-raised px-3 py-1 text-xs ring-1 ring-overlay/10">
+          <p className="pointer-events-none absolute top-2 left-1/2 z-10 max-w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg bg-raised px-3 py-1 text-center text-xs shadow-sm ring-1 ring-overlay/10">
             <span className="font-bold text-ink">{formatDelay(bars[activeBar].value, language)}</span>
             <span className="mx-1.5 text-subtle">|</span>
             <span className="text-muted">{t.trend.trips(bars[activeBar].trips.toLocaleString(locale))}</span>
           </p>
         )}
-      </div>
-
-      <div className="rounded-xl border border-overlay/5 bg-overlay/[0.02] p-3 sm:p-5">
         {/* Chart grid + bars */}
         <div className="flex gap-2 sm:gap-3">
 

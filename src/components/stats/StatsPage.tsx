@@ -15,7 +15,7 @@ function localDateStr(d: Date): string {
 }
 
 const DEFAULT_STATS_RANGE_DAYS = 7;
-const MIN_STATS_DATE = '2026-03-11';
+const MIN_STATS_DATE = '2026-03-12';
 const MAX_LINE_LENGTH = 5;
 const LINE_PATTERN = /^[a-zA-Z0-9]{1,5}$/;
 
@@ -43,7 +43,9 @@ interface StatsQuery {
 }
 
 function readDateParam(value: string | null, fallback: string, maxDate: string): string {
-  const valid = value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+  const parsed = value ? new Date(value) : null;
+  const valid = value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value)
+    && parsed !== null && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
   return valid ? clampStatsDate(value, maxDate) : fallback;
 }
 
@@ -68,7 +70,7 @@ function formatDateLabel(value: string, locale: string): string {
   if (!value) return '';
 
   const date = new Date(`${value}T00:00:00`);
-  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(date);
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
 }
 
 function LocalizedDateInput({
@@ -132,34 +134,9 @@ function LocalizedDateInput({
   );
 }
 
-/* ── Tooltip Icon (click on mobile, hover on desktop) ── */
-
-function TooltipIcon({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <span className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-overlay/10 text-[11px] font-bold text-ink ring-1 ring-overlay/10 transition hover:bg-overlay/20 hover:text-body"
-      >
-        i
-      </button>
-      {open && (
-        <span className="absolute bottom-full right-0 mb-2 w-56 rounded-lg bg-raised px-3 py-2 text-[11px] leading-relaxed text-strong shadow-xl ring-1 ring-overlay/10 sm:left-1/2 sm:right-auto sm:w-64 sm:-translate-x-1/2">
-          {text}
-        </span>
-      )}
-    </span>
-  );
-}
-
 /* ── Section Header ───────────────────────────────────── */
 
-function SectionHeader({ title, subtitle, tooltip, badge }: { title: string; subtitle: string; tooltip?: string; badge?: string }) {
+function SectionHeader({ title, subtitle, badge }: { title: string; subtitle: string; badge?: string }) {
   return (
     <div className="mb-5">
       <div className="flex items-center gap-3">
@@ -172,7 +149,6 @@ function SectionHeader({ title, subtitle, tooltip, badge }: { title: string; sub
         <h2 className="text-lg font-black uppercase tracking-wide text-ink sm:text-xl">
           {title}
         </h2>
-        {tooltip && <TooltipIcon text={tooltip} />}
       </div>
       <p className="mt-2 text-xs text-subtle sm:text-sm">{subtitle}</p>
       <div className="mt-3 h-px bg-gradient-to-r from-blue-500/40 via-blue-500/10 to-transparent" />
@@ -452,7 +428,7 @@ export default function StatsPage() {
                   <span className={`text-sm font-semibold ${estimated ? 'text-accent' : 'text-ink'}`}>
                     {t.stats.includeEstimations}
                   </span>
-                  <p className="text-[11px] text-subtle">
+                  <p className="min-h-[2lh] text-[11px] text-subtle">
                     {t.stats.estimationsHelp}
                   </p>
                 </div>
@@ -489,7 +465,7 @@ export default function StatsPage() {
             role="region"
             aria-label={statsSubtitle}
             tabIndex={-1}
-            className="mt-8 min-h-[calc(100dvh-5rem)] scroll-mt-6 sm:mt-10"
+            className="mt-8 min-h-[calc(100dvh-5rem)] scroll-mt-6 focus-visible:outline-none sm:mt-10"
           >
             {/* Results */}
               <div className="space-y-8 sm:space-y-10">
@@ -519,7 +495,6 @@ export default function StatsPage() {
                           )
                         : statsSubtitle
                     }
-                    tooltip={t.stats.punctualityTooltip}
                   />
                   {punctuality.data ? (
                     <PunctualityRing data={punctuality.data} />

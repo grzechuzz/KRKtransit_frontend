@@ -84,7 +84,7 @@ export default function PunctualityRing({ data }: PunctualityRingProps) {
             </div>
 
             {/* Label */}
-            <span className="text-center text-xs font-bold uppercase tracking-wider text-ink sm:text-sm">
+            <span className="min-h-[2lh] text-center text-xs font-bold uppercase tracking-wider text-ink sm:text-sm">
               {labels[cat.key]}
             </span>
             <span className="mt-0.5 text-center text-[10px] text-subtle sm:text-xs">

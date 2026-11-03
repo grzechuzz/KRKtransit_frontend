@@ -42,17 +42,11 @@ function delayColor(seconds: number) {
   return seconds > 180 ? 'text-negative' : 'text-warning';
 }
 
-function delayBadgeStyle(seconds: number) {
-  if (seconds < 0) return 'border-positive/15 bg-positive/10';
-  if (seconds === 0) return 'border-overlay/10 bg-overlay/5';
-  return seconds > 180 ? 'border-negative/15 bg-negative/10' : 'border-warning/15 bg-warning/10';
-}
-
 function DelayValue({ row, plain = false }: { row: DelayResultRow; plain?: boolean }) {
   const { language, t } = useI18n();
   const shape = plain
     ? 'text-lg leading-7'
-    : `inline-flex rounded-lg border px-2.5 py-1 text-sm ${delayBadgeStyle(row.delaySeconds)}`;
+    : 'text-sm';
   return (
     <span
       aria-label={`${t.tables.generatedTop} ${t.tables.generatedBottom}: ${formatSignedDelay(row.delaySeconds, language)}`}
@@ -66,7 +60,7 @@ function DelayValue({ row, plain = false }: { row: DelayResultRow; plain?: boole
 function DelayBadge({ row }: { row: DelayResultRow }) {
   const { t } = useI18n();
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-center gap-0.5">
       <DelayValue row={row} />
       {row.estimated && <span className="text-xs font-medium text-muted">{t.tables.estimated}</span>}
     </div>
@@ -75,10 +69,10 @@ function DelayBadge({ row }: { row: DelayResultRow }) {
 
 function StopPair({ from, to }: { from: string; to: string }) {
   return (
-    <div className="grid min-w-0 grid-cols-[0.75rem_minmax(0,1fr)] gap-x-2 gap-y-1.5 text-left text-sm leading-relaxed text-ink">
+    <div className="grid min-w-0 grid-cols-[0.75rem_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-left text-sm leading-5 text-ink">
       <span aria-hidden="true" className="relative flex justify-center pt-1.5">
         <span className="h-2 w-2 rounded-full border-2 border-accent bg-surface" />
-        <span className="absolute top-4 -bottom-2 w-px bg-accent/25" />
+        <span className="absolute top-4 -bottom-1 w-px bg-accent/25" />
       </span>
       <span className="min-w-0 break-words font-semibold">{from}</span>
       <span aria-hidden="true" className="flex justify-center pt-1.5">
@@ -138,7 +132,7 @@ export default function DelayResults({ rows, tripsAnalyzed, kind }: DelayResults
 
   return (
     <div>
-      <div className="hidden overflow-x-auto rounded-2xl border border-overlay/10 bg-surface lg:block">
+      <div className="hidden overflow-x-auto rounded-lg border border-overlay/10 bg-surface lg:block">
         <table className="w-full min-w-[1040px] table-fixed text-center text-sm">
           <caption className="sr-only">{title}</caption>
           <colgroup>
@@ -150,7 +144,7 @@ export default function DelayResults({ rows, tripsAnalyzed, kind }: DelayResults
               <th scope="col" className="px-4 py-4">#</th>
               <th scope="col" className="px-4 py-4">{kind === 'segment' ? t.tables.segment : t.tables.route}</th>
               <th scope="col" className="px-3 py-4">{t.tables.vehicleNumber}</th>
-              <th scope="col" className="px-3 py-4">{t.tables.serviceDateTop}<br />{t.tables.serviceDateBottom}</th>
+              <th scope="col" className="px-3 py-4">{t.tables.actualDateTop}<br />{t.tables.actualDateBottom}</th>
               <th scope="col" className="px-3 py-4 text-center">{t.tables.scheduledTop}<br />{t.tables.scheduledBottom}</th>
               <th scope="col" className="px-3 py-4 text-center">{t.tables.actualTop}<br />{t.tables.actualBottom}</th>
               <th scope="col" className="px-4 py-4">{t.tables.generatedTop}<br />{t.tables.generatedBottom}</th>
@@ -159,31 +153,20 @@ export default function DelayResults({ rows, tripsAnalyzed, kind }: DelayResults
           <tbody className="divide-y divide-overlay/10 [&_td]:align-middle [&_th]:align-middle">
             {rows.map((row, index) => (
               <tr key={row.id} className="transition-colors hover:bg-overlay/[0.03]">
-                <td className="px-2 py-5 text-xs font-medium tabular-nums text-subtle">{index + 1}</td>
-                <th scope="row" className="px-4 py-5 font-normal">
+                <td className="px-2 py-2 text-xs font-medium tabular-nums text-subtle">{index + 1}</td>
+                <th scope="row" className="px-4 py-2 font-normal">
                   <StopPair from={row.fromStop} to={row.toStop} />
-                  <p className="mt-2.5 break-words text-xs leading-relaxed text-muted">
+                  <p className="mt-1 pl-5 text-left break-words text-xs leading-4 text-muted">
                     {t.tables.direction}: <span className="font-medium text-body">{row.direction}</span>
                   </p>
                 </th>
-                <td className="px-3 py-5"><span className="inline-block max-w-full break-words rounded-md bg-overlay/5 px-2 py-1 text-xs font-semibold text-body">{row.vehicleNumber}</span></td>
-                <td className="px-3 py-5">
-                  <dl className="space-y-2 text-center">
-                    <div>
-                      <dt className="sr-only">{t.tables.serviceDateTop} {t.tables.serviceDateBottom}</dt>
-                      <dd className="font-medium tabular-nums text-body"><time dateTime={row.serviceDate}>{date(row.serviceDate)}</time></dd>
-                    </div>
-                    {hasDifferentActualDate(row) && (
-                      <div className="space-y-0.5 text-xs">
-                        <dt className="text-subtle">{t.tables.actualDateLabel}</dt>
-                        <dd className="tabular-nums text-body"><time dateTime={row.fromEventTime}>{date(row.fromEventTime)}</time></dd>
-                      </div>
-                    )}
-                  </dl>
+                <td className="px-3 py-2"><span className="inline-block max-w-full break-words rounded-md bg-overlay/5 px-2 py-1 text-xs font-semibold text-body">{row.vehicleNumber}</span></td>
+                <td className="px-3 py-2 font-medium tabular-nums text-body">
+                  <time dateTime={row.fromEventTime} title={fullDate(row.fromEventTime)}>{date(row.fromEventTime)}</time>
                 </td>
-                <td className="px-3 py-5 text-muted"><TimePair from={row.fromPlannedTime} to={row.toPlannedTime} /></td>
-                <td className="px-3 py-5 font-semibold text-ink"><TimePair from={row.fromEventTime} to={row.toEventTime} /></td>
-                <td className="px-4 py-5"><DelayBadge row={row} /></td>
+                <td className="px-3 py-2 text-muted"><TimePair from={row.fromPlannedTime} to={row.toPlannedTime} /></td>
+                <td className="px-3 py-2 font-semibold text-ink"><TimePair from={row.fromEventTime} to={row.toEventTime} /></td>
+                <td className="px-4 py-2"><DelayBadge row={row} /></td>
               </tr>
             ))}
           </tbody>

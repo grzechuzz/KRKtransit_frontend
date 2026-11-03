@@ -96,7 +96,7 @@ const pl = {
   stats: {
     loading: 'Ładowanie...',
     selectedRange: 'Wybrany zakres',
-    lineRange: (line: string, start: string, end: string) => `Linia ${line} · ${start} — ${end}`,
+    lineRange: (line: string, start: string, end: string) => `Linia ${line} · ${start === end ? start : `${start} — ${end}`}`,
     nightLinesNote: 'Linie nocne zaliczają się do poprzedniego dnia serwisowego',
     title: 'Statystyki',
     lineNumber: 'Numer linii',
@@ -106,7 +106,7 @@ const pl = {
     to: 'Do',
     estimations: 'Estymacje',
     includeEstimations: 'Uwzględnij estymacje',
-    estimationsHelp: 'Dane estymowane — mogą być mniej dokładne niż potwierdzone odczyty. Dostępne od 19.03.2026.',
+    estimationsHelp: 'Dane estymowane mogą być mniej dokładne niż potwierdzone odczyty.',
     search: 'Szukaj',
     methodologyTitle: 'Jak to działa?',
     expandMethodology: 'Kliknij, aby rozwinąć',
@@ -122,7 +122,7 @@ const pl = {
       },
       {
         title: 'Opcjonalne estymacje',
-        text: 'Przełącznik "Estymacje" pozwala dodatkowo uwzględnić przybliżone czasy oszacowane przez system w sytuacjach, gdy pojazd nie zarejestrował fizycznego zatrzymania. Estymacje przechodzą walidację, ale i tak mogą zawierać większy margines błędu niż dane bezpośrednie. Dane estymowane dostępne są od 19.03.2026.',
+        text: 'Przełącznik "Estymacje" pozwala dodatkowo uwzględnić przybliżone czasy oszacowane przez system w sytuacjach, gdy pojazd nie zarejestrował fizycznego zatrzymania. Estymacje przechodzą walidację, ale i tak mogą zawierać większy margines błędu niż dane bezpośrednie.',
       },
     ],
     punctualityTitle: 'Punktualność',
@@ -315,7 +315,7 @@ const en: Dictionary = {
   stats: {
     loading: 'Loading...',
     selectedRange: 'Selected range',
-    lineRange: (line: string, start: string, end: string) => `Line ${line} · ${start} — ${end}`,
+    lineRange: (line: string, start: string, end: string) => `Line ${line} · ${start === end ? start : `${start} — ${end}`}`,
     nightLinesNote: 'Night lines count toward the previous service day',
     title: 'Statistics',
     lineNumber: 'Line number',
@@ -325,7 +325,7 @@ const en: Dictionary = {
     to: 'To',
     estimations: 'Estimations',
     includeEstimations: 'Include estimations',
-    estimationsHelp: 'Estimated data may be less accurate than confirmed readings. Available since 19.03.2026.',
+    estimationsHelp: 'Estimated data may be less accurate than confirmed readings.',
     search: 'Search',
     methodologyTitle: 'How it works',
     expandMethodology: 'Click to expand',
@@ -341,7 +341,7 @@ const en: Dictionary = {
       },
       {
         title: 'Optional estimations',
-        text: 'The "Estimations" switch can additionally include approximate times calculated by the system when the vehicle did not register a physical stop. Estimations are validated, but they can still have a wider margin of error than direct readings. Estimated data is available since 19.03.2026.',
+        text: 'The "Estimations" switch can additionally include approximate times calculated by the system when the vehicle did not register a physical stop. Estimations are validated, but they can still have a wider margin of error than direct readings.',
       },
     ],
     punctualityTitle: 'Punctuality',
