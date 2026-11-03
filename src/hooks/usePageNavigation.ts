@@ -1,10 +1,17 @@
 import { useSyncExternalStore } from 'react';
 import type { Page } from '../types/pages';
 
-function getPage(): Page {
-  const path = window.location.hash.slice(1);
+const PATHS: Record<Page, string> = {
+  home: '/',
+  map: '/map',
+  stats: '/stats',
+  info: '/about',
+};
 
-  switch (path) {
+const listeners = new Set<() => void>();
+
+function getPage(): Page {
+  switch (window.location.pathname.replace(/\/+$/, '')) {
     case '/map': return 'map';
     case '/stats': return 'stats';
     case '/about':
@@ -14,14 +21,17 @@ function getPage(): Page {
 }
 
 function subscribe(onChange: () => void) {
-  window.addEventListener('hashchange', onChange);
-  return () => window.removeEventListener('hashchange', onChange);
+  listeners.add(onChange);
+  window.addEventListener('popstate', onChange);
+  return () => {
+    listeners.delete(onChange);
+    window.removeEventListener('popstate', onChange);
+  };
 }
 
 function navigate(page: Page) {
-  // Hash routes also work on static hosting without server-side rewrites.
-  const path = page === 'home' ? '/' : page === 'info' ? '/about' : `/${page}`;
-  window.location.hash = path;
+  window.history.pushState(null, '', PATHS[page]);
+  listeners.forEach((listener) => listener());
 }
 
 export function usePageNavigation() {
