@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import type { MobilePanel } from '../types/mobilePanels';
 import { usePageNavigation } from '../hooks/usePageNavigation';
 import TopNav from './TopNav';
 import HomePage from './HomePage';
@@ -7,14 +9,15 @@ import InfoPage from './InfoPage';
 
 export default function AppLayout() {
   const { page, navigate } = usePageNavigation();
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>(null);
 
   return (
     <div className="flex h-dvh w-screen flex-col bg-canvas">
-      <TopNav currentPage={page} onNavigate={navigate} />
+      <TopNav currentPage={page} onNavigate={navigate} mobileMenuOpen={mobilePanel === 'menu'} onMobileMenuChange={(open) => setMobilePanel(open ? 'menu' : null)} />
 
       <main className="flex-1 overflow-hidden">
         {page === 'home' && <HomePage onNavigate={navigate} />}
-        {page === 'map' && <LiveMap />}
+        {page === 'map' && <LiveMap mobilePanel={mobilePanel} onMobilePanelChange={setMobilePanel} />}
         {page === 'stats' && <StatsPage />}
         {page === 'info' && <InfoPage />}
       </main>

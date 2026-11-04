@@ -24,15 +24,22 @@ function ArrivalTime({ value }: { value: string | null }) {
   return <time dateTime={value}>{arrivalTimeFormatter.format(new Date(value))}</time>;
 }
 
-function UpcomingStops({ query, defaultExpanded = true, compactCollapsed = false }: {
+function UpcomingStops({ query, defaultExpanded = true, compactCollapsed = false, expanded: controlledExpanded, onExpandedChange }: {
   query: VehiclePanelProps['upcomingStops'];
   defaultExpanded?: boolean;
   compactCollapsed?: boolean;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
 }) {
   const { t } = useI18n();
   const labels = t.vehiclePanel;
   const { data, error, isPending } = query;
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
+  const expanded = controlledExpanded ?? localExpanded;
+  const toggleExpanded = () => {
+    if (onExpandedChange) onExpandedChange(!expanded);
+    else setLocalExpanded(!expanded);
+  };
   const contentId = useId();
   const showCompactButton = compactCollapsed && !expanded;
 
@@ -58,7 +65,7 @@ function UpcomingStops({ query, defaultExpanded = true, compactCollapsed = false
           type="button"
           aria-expanded={expanded}
           aria-controls={contentId}
-          onClick={() => setExpanded((value) => !value)}
+          onClick={toggleExpanded}
           className={`flex min-h-11 w-full touch-manipulation cursor-pointer items-center gap-2 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 ${showCompactButton ? 'rounded-xl border border-overlay/5 bg-canvas/25 px-3 font-medium text-strong hover:border-overlay/15 active:border-overlay/20 [[data-theme=light]_&]:bg-[#f8fafc]' : 'rounded-lg font-semibold text-ink hover:text-ink'}`}
         >
           <span className="min-w-0 flex-1">{labels.upcomingStops}</span>
@@ -144,7 +151,12 @@ function useRelativeTime(iso: string): string {
   return formatRelativeTime(iso, now, t.vehiclePanel);
 }
 
-export function MobileVehicleBar({ vehicle, onClose, upcomingStops }: VehiclePanelProps) {
+interface MobileVehicleBarProps extends VehiclePanelProps {
+  stopsExpanded: boolean;
+  onStopsExpandedChange: (expanded: boolean) => void;
+}
+
+export function MobileVehicleBar({ vehicle, onClose, upcomingStops, stopsExpanded, onStopsExpandedChange }: MobileVehicleBarProps) {
   const relTime = useRelativeTime(vehicle.timestamp);
   const { t } = useI18n();
 
@@ -171,7 +183,7 @@ export function MobileVehicleBar({ vehicle, onClose, upcomingStops }: VehiclePan
           </svg>
         </button>
       </div>
-      <UpcomingStops key={vehicle.license_plate} query={upcomingStops} defaultExpanded={false} compactCollapsed />
+      <UpcomingStops key={vehicle.license_plate} query={upcomingStops} defaultExpanded={false} compactCollapsed expanded={stopsExpanded} onExpandedChange={onStopsExpandedChange} />
     </div>
   );
 }

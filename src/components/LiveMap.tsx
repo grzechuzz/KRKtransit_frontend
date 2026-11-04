@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 import { useVehicleCache } from '../hooks/useVehicleCache';
 import { useUpcomingStops } from '../hooks/useUpcomingStops';
+import { useIsMobile } from '../hooks/useIsMobile';
+import type { MobilePanel } from '../types/mobilePanels';
 import { getErrorMessage } from '../api/client';
 import { useI18n } from '../i18n-core';
 import VehicleMarker from './VehicleMarker';
@@ -20,20 +22,53 @@ const MAX_BOUNDS = L.latLngBounds(
   L.latLng(51.0, 21.5),
 );
 
-export default function LiveMap() {
+interface LiveMapProps {
+  mobilePanel: MobilePanel;
+  onMobilePanelChange: (panel: MobilePanel) => void;
+}
+
+export default function LiveMap({ mobilePanel, onMobilePanelChange }: LiveMapProps) {
   const { vehicles, isLoading, error } = useVehicleCache();
   const { language, t } = useI18n();
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [activeLines, setActiveLines] = useState<Set<string>>(new Set());
-  const [filterOpen, setFilterOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const [desktopFilterOpen, setDesktopFilterOpen] = useState(false);
+  const [desktopLegendOpen, setDesktopLegendOpen] = useState(false);
+  const filterOpen = isMobile ? mobilePanel === 'filter' : desktopFilterOpen;
+  const legendOpen = isMobile ? mobilePanel === 'legend' : desktopLegendOpen;
+
+  const handleToggleFilter = () => {
+    if (isMobile) {
+      onMobilePanelChange(filterOpen ? null : 'filter');
+    } else {
+      setDesktopLegendOpen(false);
+      setDesktopFilterOpen(!desktopFilterOpen);
+    }
+  };
+
+  const handleToggleLegend = () => {
+    if (isMobile) {
+      onMobilePanelChange(legendOpen ? null : 'legend');
+    } else {
+      setDesktopFilterOpen(false);
+      setDesktopLegendOpen(!desktopLegendOpen);
+    }
+  };
 
   const handleSelect = useCallback((vehicle: Vehicle) => {
+    if (vehicle.license_plate !== selectedVehicle?.license_plate && mobilePanel === 'stops') {
+      onMobilePanelChange(null);
+    }
     setSelectedVehicle((prev) =>
       prev?.license_plate === vehicle.license_plate ? prev : vehicle,
     );
-  }, []);
+  }, [selectedVehicle, mobilePanel, onMobilePanelChange]);
 
-  const handleClose = useCallback(() => setSelectedVehicle(null), []);
+  const handleClose = useCallback(() => {
+    setSelectedVehicle(null);
+    if (mobilePanel === 'stops') onMobilePanelChange(null);
+  }, [mobilePanel, onMobilePanelChange]);
 
   const handleToggleLine = useCallback((line: string) => {
     setActiveLines((prev) => {
@@ -78,7 +113,7 @@ export default function LiveMap() {
     <div className="flex h-full w-full flex-col">
       {/* Mobile: static vehicle info bar between navbar and map */}
       {currentSelected && (
-        <MobileVehicleBar vehicle={currentSelected} onClose={handleClose} upcomingStops={upcomingStops} />
+        <MobileVehicleBar vehicle={currentSelected} onClose={handleClose} upcomingStops={upcomingStops} stopsExpanded={mobilePanel === 'stops'} onStopsExpandedChange={(open) => onMobilePanelChange(open ? 'stops' : null)} />
       )}
 
       {/* Map fills remaining space */}
@@ -124,7 +159,9 @@ export default function LiveMap() {
             onShowAll={handleShowAll}
             onHideAll={handleHideAll}
             isOpen={filterOpen}
-            onToggleOpen={() => setFilterOpen((p) => !p)}
+            onToggleOpen={handleToggleFilter}
+            legendOpen={legendOpen}
+            onToggleLegend={handleToggleLegend}
           />
         </div>
 
