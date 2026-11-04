@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend, getErrorMessage } from '../../api/client';
+import { ApiClientError, fetchDelayMap, fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend, getErrorMessage } from '../../api/client';
 import PunctualityRing from './PunctualityRing';
 import MaxDelayTable from './MaxDelayTable';
 import RouteDelayTable from './RouteDelayTable';
 import TrendChart from './TrendChart';
+import DelayMap from './DelayMap';
 import { useI18n } from '../../i18n-core';
 
 function localDateStr(d: Date): string {
@@ -244,6 +245,7 @@ export default function StatsPage() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState<StatsQuery | null>(LINE_PATTERN.test(initial.line) ? initial : null);
   const [lineInvalid, setLineInvalid] = useState(initial.line !== '' && !LINE_PATTERN.test(initial.line));
+  const [mapSearchVersion, setMapSearchVersion] = useState(0);
 
   const scrolledQueryRef = useRef<typeof query>(null);
 
@@ -274,6 +276,11 @@ export default function StatsPage() {
       estimated,
     };
     setQuery(submitted);
+    setMapSearchVersion(version => version + 1);
+    if (delayMap.isError && query?.line === submitted.line && query.start === submitted.start
+      && query.end === submitted.end && query.estimated === submitted.estimated) {
+      void delayMap.refetch();
+    }
     writeStatsUrl(submitted);
   };
 
@@ -304,6 +311,14 @@ export default function StatsPage() {
   const trend = useQuery({
     queryKey: ['trend', query?.line, query?.start, query?.end, query?.estimated, language],
     queryFn: () => fetchTrend(query!.line, query!.start, query!.end, query!.estimated, language),
+    enabled: !!query,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const delayMap = useQuery({
+    queryKey: ['delayMap', query?.line, query?.start, query?.end, query?.estimated, language],
+    queryFn: () => fetchDelayMap(query!.line, query!.start, query!.end, query!.estimated, language),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
@@ -556,6 +571,18 @@ export default function StatsPage() {
                 </section>
               </div>
           </div>
+        )}
+        {query && (
+          <section aria-label={t.delayMap.title} className="mt-8 sm:mt-10">
+            <SectionHeader title={t.delayMap.title} subtitle={t.delayMap.subtitle} />
+            {delayMap.data ? (
+              <DelayMap key={JSON.stringify([query.line, query.start, query.end, query.estimated, mapSearchVersion, delayMap.dataUpdatedAt])} data={delayMap.data} />
+            ) : delayMap.error instanceof ApiClientError && delayMap.error.status === 404 && delayMap.error.errorCode === 'RESOURCE_NOT_FOUND' ? (
+              <p role="status" className="py-8 text-center text-sm text-subtle">{getErrorMessage(delayMap.error, language)}</p>
+            ) : delayMap.error ? (
+              <SectionError error={delayMap.error} />
+            ) : <SectionLoading />}
+          </section>
         )}
       </div>
 

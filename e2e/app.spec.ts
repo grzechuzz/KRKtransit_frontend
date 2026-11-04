@@ -92,7 +92,7 @@ test('statistics validate input, save filters and show actual event dates', asyn
   await search.click();
   await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeVisible();
   await expect(page).toHaveURL(/estimated=1/);
-  await expect.poll(() => apiRequests.filter(url => url.includes('/stats/')).length).toBe(4);
+  await expect.poll(() => apiRequests.filter(url => url.includes('/stats/')).length).toBe(5);
   expect(apiRequests.every(url => url.includes('include_estimated=true'))).toBe(true);
   const result = info.project.name === 'mobile'
     ? page.getByRole('list', { name: 'Opóźnienia między przystankami', exact: true })

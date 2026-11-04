@@ -131,3 +131,42 @@ export interface TrendResponse {
   end_date: string;
   days: TrendDay[];
 }
+
+export type DelayBand = 'ALL_DAY' | 'MORNING' | 'MIDDAY' | 'AFTERNOON' | 'EVENING_NIGHT' | 'WEEKEND';
+
+export interface BandDelay {
+  band: DelayBand;
+  samples: number;
+  mean_seconds: number;
+  median_seconds: number;
+  p90_seconds: number;
+}
+
+export interface DelayMapStop {
+  stop_key: string;
+  stop_name: string;
+  stop_desc: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface DelayMapSegment {
+  from_stop_key: string;
+  to_stop_key: string;
+  points: [number, number][];
+  delays: BandDelay[];
+}
+
+export interface DelayMapDirection {
+  headsign: string;
+  trips_count: number;
+  stops: DelayMapStop[];
+  segments: DelayMapSegment[];
+}
+
+export interface DelayMapResponse {
+  line_number: string;
+  start_date: string;
+  end_date: string;
+  directions: DelayMapDirection[];
+}

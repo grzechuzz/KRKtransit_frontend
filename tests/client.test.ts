@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  ApiClientError, fetchMaxDelay, fetchPunctuality, fetchRouteDelay, fetchTrend,
+  ApiClientError, fetchDelayMap, fetchMaxDelay, fetchPunctuality, fetchRouteDelay, fetchTrend,
   fetchShape, fetchTripStops, fetchUpcomingStops, fetchVehiclePositions,
 } from '../src/api/client';
 import { translations } from '../src/i18n-core';
@@ -18,7 +18,7 @@ describe('API requests', () => {
 
   it.each([
     [fetchPunctuality, 'punctuality'], [fetchMaxDelay, 'max-delay'],
-    [fetchRouteDelay, 'route-delay'], [fetchTrend, 'trend'],
+    [fetchRouteDelay, 'route-delay'], [fetchTrend, 'trend'], [fetchDelayMap, 'delay-map'],
   ] as const)('sends the selected statistics filters to %s', async (request, endpoint) => {
     fetchMock.mockResolvedValue(new Response('{}'));
     await request('A/B', '2026-03-12', '2026-03-13', true);
@@ -33,6 +33,16 @@ describe('API requests', () => {
     fetchMock.mockResolvedValue(new Response('{}'));
     await fetchTrend('304', '2026-03-12', '2026-03-13');
     expect(String(fetchMock.mock.calls[0][0])).not.toContain('include_estimated');
+  });
+
+  it.each([false, true])('sends explicit estimated=%s without changing the line identifier', async estimated => {
+    fetchMock.mockResolvedValue(new Response('{}'));
+    await fetchDelayMap('00aB', '2026-03-12', '2026-03-12', estimated);
+    const url = new URL(String(fetchMock.mock.calls[0][0]), 'http://localhost');
+    expect(url.pathname).toBe('/v1/lines/00aB/stats/delay-map');
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      start_date: '2026-03-12', end_date: '2026-03-12', include_estimated: String(estimated),
+    });
   });
 
   it.each([

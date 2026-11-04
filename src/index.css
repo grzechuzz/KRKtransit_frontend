@@ -146,3 +146,22 @@ input[type="date"] {
 input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
 }
+
+.stats-delay-map .delay-map-tooltip {
+  width: 19rem;
+  max-width: min(19rem, calc(100vw - 4rem));
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.stats-delay-map .leaflet-control-zoom a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .stats-delay-map .leaflet-control-zoom {
+    display: block !important;
+  }
+}
