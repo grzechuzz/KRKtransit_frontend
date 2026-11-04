@@ -7,6 +7,7 @@ import type {
   MaxDelayResponse,
   RouteDelayResponse,
   TrendResponse,
+  DelayMapResponse,
 } from '../types/api';
 import { translations, type Language } from '../i18n-core';
 
@@ -280,6 +281,21 @@ export function fetchTrend(
   const params = statsParams(startDate, endDate, includeEstimated);
   return fetchJson<TrendResponse>(
     `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/trend?${params}`,
+    language,
+  );
+}
+
+export function fetchDelayMap(
+  lineNumber: string,
+  startDate: string,
+  endDate: string,
+  includeEstimated = false,
+  language: Language = DEFAULT_LANGUAGE,
+): Promise<DelayMapResponse> {
+  const params = statsParams(startDate, endDate, includeEstimated);
+  params.set('include_estimated', String(includeEstimated));
+  return fetchJson<DelayMapResponse>(
+    `${BASE_URL}/lines/${encodeURIComponent(lineNumber)}/stats/delay-map?${params}`,
     language,
   );
 }

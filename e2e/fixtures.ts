@@ -1,5 +1,6 @@
 import { test as base, expect } from '@playwright/test';
 import type { Vehicle, UpcomingStopsResponse, MaxDelayEntry, RouteDelayEntry } from '../src/types/api';
+import { makeDelayMap } from '../tests/fixtures/delayMap';
 
 const vehicles: Vehicle[] = [
   { trip_id: 'trip-304', license_plate: 'TEST304', line_number: '304', headsign: 'Wieliczka Kampus', shape_id: 'shape-304', latitude: 50.0647, longitude: 19.945, bearing: 90, timestamp: '' },
@@ -56,6 +57,7 @@ export const test = base.extend<{ apiRequests: string[] }>({
         else if (url.pathname.endsWith('/max-delay')) body = { ...common, max_delay: [segment], trips_analyzed: 10 };
         else if (url.pathname.endsWith('/route-delay')) body = { ...common, max_route_delay: [route], trips_analyzed: 10 };
         else if (url.pathname.endsWith('/trend')) body = { ...common, days: [{ date: '2026-11-02', avg_delay_seconds: 149, trips_count: 6 }, { date: '2026-11-03', avg_delay_seconds: 210, trips_count: 4 }] };
+        else if (url.pathname.endsWith('/delay-map')) body = { ...makeDelayMap(), ...common };
       }
       if (body === undefined) throw new Error(`Unexpected API request: ${url.pathname}`);
       await r.fulfill({ status, json: body, headers: { 'access-control-allow-origin': '*' } });
