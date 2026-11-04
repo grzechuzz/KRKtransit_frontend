@@ -480,7 +480,7 @@ export default function StatsPage() {
             role="region"
             aria-label={statsSubtitle}
             tabIndex={-1}
-            className="mt-8 min-h-[calc(100dvh-5rem)] scroll-mt-6 focus-visible:outline-none sm:mt-10"
+            className="mt-8 min-h-[calc(100dvh-5rem)] scroll-mt-6 sm:mt-10"
           >
             {/* Results */}
               <div className="space-y-8 sm:space-y-10">

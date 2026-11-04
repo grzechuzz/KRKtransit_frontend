@@ -105,6 +105,10 @@ test('statistics validate input, save filters and show actual event dates', asyn
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeVisible();
   await expect(page.locator('#start-hero')).toHaveValue('2026-03-12');
+  await expect(page.locator('#stats-results')).toBeFocused();
+  await expect(page.locator('#stats-results')).toHaveCSS('outline-style', 'none');
+  await page.keyboard.press('Tab');
+  await expect(page.locator(':focus')).toHaveCSS('outline-style', 'solid');
 });
 
 test('missing statistics show a readable error without empty result sections', async ({ page }) => {

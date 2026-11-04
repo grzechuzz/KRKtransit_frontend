@@ -46,9 +46,13 @@ function DelayValue({ row, plain = false }: { row: DelayResultRow; plain?: boole
 function DelayBadge({ row }: { row: DelayResultRow }) {
   const { t } = useI18n();
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div className="relative flex justify-center">
       <DelayValue row={row} />
-      {row.estimated && <span className="text-xs font-medium text-muted">{t.tables.estimated}</span>}
+      {row.estimated && (
+        <span className="absolute top-full left-0 mt-0.5 w-full text-center text-[11px] leading-4 font-normal italic text-subtle">
+          {t.tables.estimated}
+        </span>
+      )}
     </div>
   );
 }
