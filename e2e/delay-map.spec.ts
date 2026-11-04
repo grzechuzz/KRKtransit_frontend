@@ -1,10 +1,30 @@
 import { test, expect } from './fixtures';
 import { makeDelayMap } from '../tests/fixtures/delayMap';
 
-const statsUrl = '/stats?line=304&from=2026-10-27&to=2026-11-02';
+const statsUrl = '/delay-map?line=304&from=2026-10-27&to=2026-11-02';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('krk-transit-language', 'pl'));
+});
+
+test('mouse can inspect a segment just outside the visible stop', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Checks mouse precision; touch retains larger targets.');
+  await page.goto(statsUrl);
+  const stops = page.locator('.delay-map-stop-hit');
+  await expect(stops).toHaveCount(4);
+  await page.locator('.leaflet-container').scrollIntoViewIfNeeded();
+  const first = (await stops.nth(0).boundingBox())!;
+  const second = (await stops.nth(1).boundingBox())!;
+  const x = first.x + first.width / 2;
+  const y = first.y + first.height / 2;
+  const dx = second.x + second.width / 2 - x;
+  const dy = second.y + second.height / 2 - y;
+  const distance = Math.hypot(dx, dy);
+  await page.mouse.move(x, y);
+  await expect(page.locator('.leaflet-tooltip')).toHaveText('Przystanek A (01)');
+  await page.mouse.move(x + dx / distance * 12, y + dy / distance * 12);
+  await expect(page.locator('.leaflet-tooltip')).toHaveCount(1);
+  await expect(page.locator('.leaflet-tooltip')).toContainText('90. percentyl');
 });
 
 for (const theme of ['light', 'dark']) {
@@ -18,7 +38,7 @@ for (const theme of ['light', 'dark']) {
     await expect(segments.nth(1)).toHaveAttribute('stroke', '#eab308');
     await expect(segments.nth(2)).toHaveAttribute('stroke', '#9ca3af');
     await expect(section.locator('.delay-map-stop-hit')).toHaveCount(4);
-    await expect.poll(() => apiRequests.filter(url => url.includes('/stats/')).length).toBe(5);
+    await expect.poll(() => apiRequests.filter(url => url.includes('/stats/')).length).toBe(1);
     expect(apiRequests.find(url => url.includes('/delay-map'))).toContain('include_estimated=false');
     await section.scrollIntoViewIfNeeded();
     const hit = section.locator('.delay-map-hit').first();
@@ -56,7 +76,7 @@ for (const theme of ['light', 'dark']) {
     await section.getByRole('button', { name: 'Kierunek 3', exact: true }).click();
     await expect(segments).toHaveCount(1);
     await expect(section.locator('.leaflet-control-zoom')).toBeVisible();
-    expect(apiRequests.filter(url => url.includes('/stats/'))).toHaveLength(5);
+    expect(apiRequests.filter(url => url.includes('/stats/'))).toHaveLength(1);
     expect(apiRequests.some(url => /\/shapes\/|\/trips\//.test(url))).toBe(false);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.getByRole('button', { name: 'Szukaj', exact: true }).click();
@@ -74,9 +94,10 @@ test('loads independently, zooms with the mouse wheel and pans with a finger', a
   });
   await page.goto(statsUrl);
   const section = page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true });
-  await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mapa przyrostu opóźnień', exact: true })).toBeVisible();
   await expect(section.getByRole('status')).toContainText('Ładowanie');
-  await expect(page.getByRole('button', { name: 'Szukaj', exact: true })).toHaveAttribute('aria-busy', 'false');
+  await section.getByRole('status').screenshot({ path: info.outputPath('map-loading.png') });
+  await expect(page.getByRole('button', { name: 'Szukaj', exact: true })).toHaveAttribute('aria-busy', 'true');
   release();
   await expect(section.locator('.delay-map-segment')).toHaveCount(3);
   await section.scrollIntoViewIfNeeded();
@@ -106,13 +127,13 @@ test('loads independently, zooms with the mouse wheel and pans with a finger', a
   }
 });
 
-test('shows a usable map when every other statistic fails', async ({ page }) => {
+test('loads the map without requesting other statistics', async ({ page }) => {
   await page.route('**/stats/*?*', async route => {
     if (route.request().url().includes('/delay-map?')) return route.fallback();
     await route.fulfill({ status: 503, json: { error_code: 'EXTERNAL_SERVICE_ERROR', message: 'Statistics service is busy' } });
   });
   await page.goto(statsUrl);
-  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.locator('.delay-map-segment')).toHaveCount(3);
   await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeHidden();
 });
@@ -142,13 +163,13 @@ for (const [status, body, message] of [
   [503, { error_code: 'EXTERNAL_SERVICE_ERROR' }, 'zależnym serwisem'],
   [500, { error_code: 'INTERNAL_ERROR' }, 'Wewnętrzny błąd'],
 ] as const) {
-  test(`handles HTTP ${status} (${JSON.stringify(body)}) without hiding other results`, async ({ page }) => {
+  test(`handles HTTP ${status} (${JSON.stringify(body)}) on the dedicated page`, async ({ page }) => {
     await page.route('**/stats/delay-map?*', route => route.fulfill({ status, json: body }));
     await page.goto(statsUrl);
     const section = page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true });
     await expect(section).toContainText(message);
     await expect(section.locator('.leaflet-container')).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mapa przyrostu opóźnień', exact: true })).toBeVisible();
   });
 }
 

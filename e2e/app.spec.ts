@@ -88,11 +88,11 @@ test('statistics validate input, save filters and show actual event dates', asyn
   await page.getByLabel('Numer linii', { exact: true }).fill('304');
   await page.locator('#start-hero').fill('2026-03-12');
   await page.locator('#end-hero').fill('2026-03-13');
-  await page.getByRole('button', { name: /Uwzględnij estymacje/ }).click();
+  await page.getByRole('switch', { name: /Uwzględnij estymacje/ }).click();
   await search.click();
   await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeVisible();
   await expect(page).toHaveURL(/estimated=1/);
-  await expect.poll(() => apiRequests.filter(url => url.includes('/stats/')).length).toBe(5);
+  await expect.poll(() => apiRequests.filter(url => url.includes('/stats/')).length).toBe(4);
   expect(apiRequests.every(url => url.includes('include_estimated=true'))).toBe(true);
   const result = info.project.name === 'mobile'
     ? page.getByRole('list', { name: 'Opóźnienia między przystankami', exact: true })

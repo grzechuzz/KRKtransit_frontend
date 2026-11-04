@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { CircleMarker, Pane, useMapEvents } from 'react-leaflet';
 import type { LatLng, LeafletMouseEvent } from 'leaflet';
 import type { DelayBand, DelayMapDirection } from '../../types/api';
@@ -11,8 +11,17 @@ interface ActiveItem {
   pinned: boolean;
 }
 
+const COARSE_POINTER = '(pointer: coarse)';
+function subscribePointer(onChange: () => void) {
+  const media = window.matchMedia(COARSE_POINTER);
+  media.addEventListener('change', onChange);
+  return () => media.removeEventListener('change', onChange);
+}
+const hasCoarsePointer = () => window.matchMedia(COARSE_POINTER).matches;
+
 export default function DelayMapLayers({ direction, band }: { direction: DelayMapDirection; band: DelayBand }) {
   const [active, setActive] = useState<ActiveItem | null>(null);
+  const coarsePointer = useSyncExternalStore(subscribePointer, hasCoarsePointer, () => false);
   const stops = useMemo(() => new Map(direction.stops.map(stop => [stop.stop_key, stop])), [direction.stops]);
   useMapEvents({ click: () => setActive(null), zoomstart: () => setActive(null), dragstart: () => setActive(null) });
   useEffect(() => {
@@ -52,10 +61,10 @@ export default function DelayMapLayers({ direction, band }: { direction: DelayMa
               <CircleMarker center={center} radius={5} interactive={false} pathOptions={{ color: 'var(--app-surface)', weight: 2, fillColor: 'var(--app-accent)', fillOpacity: 1 }} />
               <CircleMarker
                 center={center}
-                radius={18}
+                radius={coarsePointer ? 18 : 8}
                 bubblingMouseEvents={false}
                 className="delay-map-stop-hit"
-                pathOptions={{ opacity: 0, fillOpacity: 0 }}
+                pathOptions={{ opacity: 0, fillOpacity: 0, weight: 0 }}
                 eventHandlers={{ mouseover: event => enter(key, event), mouseout: leave, click: event => select(key, event) }}
               >
                 {active?.key === key && (

@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
+import { latLngBounds } from 'leaflet';
 import type { DelayBand, DelayMapResponse } from '../../types/api';
 import { useI18n } from '../../i18n-core';
 import DelayMapLayers from './DelayMapLayers';
@@ -7,6 +8,7 @@ import DelayMapViewport from './DelayMapViewport';
 import DelayMapLegend from './DelayMapLegend';
 
 const BANDS: DelayBand[] = ['ALL_DAY', 'MORNING', 'MIDDAY', 'AFTERNOON', 'EVENING_NIGHT', 'WEEKEND'];
+const MAX_BOUNDS = latLngBounds([49.0, 18.5], [51.0, 21.5]);
 
 export default function DelayMap({ data }: { data: DelayMapResponse }) {
   const { t } = useI18n();
@@ -20,8 +22,8 @@ export default function DelayMap({ data }: { data: DelayMapResponse }) {
 
   return (
     <div>
-      <div className="mb-4 flex min-w-0 flex-col gap-4">
-        <fieldset>
+      <div className="mb-4 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start">
+        <fieldset className="min-w-0 flex-1">
           <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">{t.delayMap.direction}</legend>
           <div className="flex flex-wrap gap-2">
             {data.directions.map((item, index) => (
@@ -31,7 +33,7 @@ export default function DelayMap({ data }: { data: DelayMapResponse }) {
             ))}
           </div>
         </fieldset>
-        <div className="min-w-0 sm:max-w-md">
+        <div className="min-w-0 sm:max-w-md lg:w-72 lg:shrink-0">
           <label htmlFor={bandId} className="mb-2 block text-xs font-semibold uppercase tracking-wide text-subtle">{t.delayMap.timeBand}</label>
           <select id={bandId} value={band} onChange={event => setBand(event.target.value as DelayBand)} className="min-h-11 w-full min-w-0 rounded-lg border border-overlay/10 bg-surface px-3 py-2 text-sm text-ink">
             {BANDS.map(value => <option key={value} value={value}>{t.delayMap.bands[value]}</option>)}
@@ -40,7 +42,7 @@ export default function DelayMap({ data }: { data: DelayMapResponse }) {
       </div>
       {direction.segments.length ? (
         <div className="stats-delay-map relative isolate overflow-hidden rounded-xl border border-overlay/10">
-          <MapContainer center={[50.0647, 19.945]} zoom={12} scrollWheelZoom doubleClickZoom={false} zoomControl={false} className="h-80 w-full sm:h-[440px]">
+          <MapContainer center={[50.0647, 19.945]} zoom={12} minZoom={8} maxBounds={MAX_BOUNDS} maxBoundsViscosity={1.0} scrollWheelZoom doubleClickZoom={false} zoomControl={false} className="h-[clamp(360px,55dvh,480px)] w-full lg:h-[clamp(480px,65dvh,760px)]">
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <ZoomControl position="topright" />
             <DelayMapViewport direction={direction} />

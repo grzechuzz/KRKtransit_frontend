@@ -1,139 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ApiClientError, fetchDelayMap, fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend, getErrorMessage } from '../../api/client';
+import { fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend, getErrorMessage } from '../../api/client';
 import PunctualityRing from './PunctualityRing';
 import MaxDelayTable from './MaxDelayTable';
 import RouteDelayTable from './RouteDelayTable';
 import TrendChart from './TrendChart';
-import DelayMap from './DelayMap';
+import DelayMapPromo from './DelayMapPromo';
+import LineStatsSearchFields from './LineStatsSearchFields';
+import LineSearchButton from './LineSearchButton';
+import { useLineStatsSearch } from '../../hooks/useLineStatsSearch';
+import { formatDateLabel } from '../../utils/lineStatsSearch';
 import { useI18n } from '../../i18n-core';
-
-function localDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-const DEFAULT_STATS_RANGE_DAYS = 7;
-const MIN_STATS_DATE = '2026-03-12';
-const MAX_LINE_LENGTH = 5;
-const LINE_PATTERN = /^[a-zA-Z0-9]{1,5}$/;
-
-function clampStatsDate(value: string, maxDate: string): string {
-  if (!value) return value;
-  if (value < MIN_STATS_DATE) return MIN_STATS_DATE;
-  return value > maxDate ? maxDate : value;
-}
-
-function getDefaultDates() {
-  const today = new Date();
-  const weekAgo = new Date(today);
-  weekAgo.setDate(today.getDate() - (DEFAULT_STATS_RANGE_DAYS - 1));
-  return {
-    start: localDateStr(weekAgo),
-    end: localDateStr(today),
-  };
-}
-
-interface StatsQuery {
-  line: string;
-  start: string;
-  end: string;
-  estimated: boolean;
-}
-
-function readDateParam(value: string | null, fallback: string, maxDate: string): string {
-  const parsed = value ? new Date(value) : null;
-  const valid = value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value)
-    && parsed !== null && !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-  return valid ? clampStatsDate(value, maxDate) : fallback;
-}
-
-function readStatsUrl(maxDate: string): StatsQuery {
-  const params = new URLSearchParams(window.location.search);
-  const defaults = getDefaultDates();
-  return {
-    line: (params.get('line') ?? '').trim().slice(0, MAX_LINE_LENGTH),
-    start: readDateParam(params.get('from'), defaults.start, maxDate),
-    end: readDateParam(params.get('to'), defaults.end, maxDate),
-    estimated: params.get('estimated') === '1',
-  };
-}
-
-function writeStatsUrl({ line, start, end, estimated }: StatsQuery) {
-  const params = new URLSearchParams({ line, from: start, to: end });
-  if (estimated) params.set('estimated', '1');
-  window.history.replaceState(null, '', `${window.location.pathname}?${params}`);
-}
-
-function formatDateLabel(value: string, locale: string): string {
-  if (!value) return '';
-
-  const date = new Date(`${value}T00:00:00`);
-  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
-}
-
-function LocalizedDateInput({
-  id,
-  value,
-  min,
-  max,
-  onChange,
-  className = '',
-}: {
-  id: string;
-  value: string;
-  min: string;
-  max: string;
-  onChange: (value: string) => void;
-  className?: string;
-}) {
-  const { locale } = useI18n();
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const openPicker = () => {
-    const input = inputRef.current;
-    if (!input) return;
-
-    if (typeof input.showPicker === 'function') {
-      input.showPicker();
-      return;
-    }
-
-    input.focus();
-  };
-
-  return (
-    <div className={`relative ${className}`} onClick={openPicker}>
-      <input
-        ref={inputRef}
-        id={id}
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(e) => onChange(e.target.value)}
-        className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0 [color-scheme:inherit]"
-      />
-      <div
-        aria-hidden="true"
-        className="flex h-full w-full items-center justify-between gap-2 rounded-lg border border-overlay/10 bg-overlay/5 px-3 text-sm text-ink outline-none transition peer-focus:border-blue-500 peer-focus:ring-1 peer-focus:ring-blue-500"
-      >
-        <span className="truncate">{formatDateLabel(value, locale)}</span>
-        <svg
-          className="h-4 w-4 shrink-0 text-subtle"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
-        </svg>
-      </div>
-    </div>
-  );
-}
 
 /* ── Section Header ───────────────────────────────────── */
 
@@ -235,55 +112,11 @@ function MethodologyAccordion({ children }: { children: React.ReactNode }) {
 
 export default function StatsPage() {
   const { language, t, locale } = useI18n();
-  const maxStatsDate = localDateStr(new Date());
-  const [initial] = useState(() => readStatsUrl(maxStatsDate));
-  const [lineInput, setLineInput] = useState(initial.line);
-  const [startDate, setStartDate] = useState(initial.start);
-  const [endDate, setEndDate] = useState(initial.end);
-  const [estimated, setEstimated] = useState(initial.estimated);
+  const search = useLineStatsSearch();
+  const { query, lineInvalid } = search;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const [query, setQuery] = useState<StatsQuery | null>(LINE_PATTERN.test(initial.line) ? initial : null);
-  const [lineInvalid, setLineInvalid] = useState(initial.line !== '' && !LINE_PATTERN.test(initial.line));
-  const [mapSearchVersion, setMapSearchVersion] = useState(0);
-
   const scrolledQueryRef = useRef<typeof query>(null);
-
-  const handleStartDateChange = (value: string) => {
-    setStartDate(clampStatsDate(value, maxStatsDate));
-  };
-
-  const handleEndDateChange = (value: string) => {
-    setEndDate(clampStatsDate(value, maxStatsDate));
-  };
-
-  const canSubmit = lineInput.trim().length > 0 && startDate && endDate;
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!e.currentTarget.reportValidity()) return;
-    if (!canSubmit) return;
-    const line = lineInput.trim();
-    if (!LINE_PATTERN.test(line)) {
-      setLineInvalid(true);
-      return;
-    }
-    setLineInvalid(false);
-    const submitted = {
-      line,
-      start: clampStatsDate(startDate, maxStatsDate),
-      end: clampStatsDate(endDate, maxStatsDate),
-      estimated,
-    };
-    setQuery(submitted);
-    setMapSearchVersion(version => version + 1);
-    if (delayMap.isError && query?.line === submitted.line && query.start === submitted.start
-      && query.end === submitted.end && query.estimated === submitted.estimated) {
-      void delayMap.refetch();
-    }
-    writeStatsUrl(submitted);
-  };
-
   const punctuality = useQuery({
     queryKey: ['punctuality', query?.line, query?.start, query?.end, query?.estimated, language],
     queryFn: () => fetchPunctuality(query!.line, query!.start, query!.end, query!.estimated, language),
@@ -311,14 +144,6 @@ export default function StatsPage() {
   const trend = useQuery({
     queryKey: ['trend', query?.line, query?.start, query?.end, query?.estimated, language],
     queryFn: () => fetchTrend(query!.line, query!.start, query!.end, query!.estimated, language),
-    enabled: !!query,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
-  const delayMap = useQuery({
-    queryKey: ['delayMap', query?.line, query?.start, query?.end, query?.estimated, language],
-    queryFn: () => fetchDelayMap(query!.line, query!.start, query!.end, query!.estimated, language),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
     retry: false,
@@ -359,7 +184,7 @@ export default function StatsPage() {
 
         {/* Search stays above the results. */}
         <div className="flex min-h-[60vh] flex-col items-center justify-center">
-          <form onSubmit={handleSubmit} className="w-full max-w-lg">
+          <form onSubmit={search.handleSubmit} className="w-full max-w-lg">
             <div className="rounded-2xl border border-overlay/5 bg-gradient-to-b from-overlay/[0.04] to-transparent p-6 shadow-panel sm:p-10">
               <h1 className="mb-1 text-center text-2xl font-black uppercase tracking-wide text-ink sm:text-4xl">
                 {t.stats.title}
@@ -368,102 +193,16 @@ export default function StatsPage() {
                 {t.stats.nightLinesNote}
               </p>
 
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="line-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
-                    {t.stats.lineNumber}
-                  </label>
-                  <input
-                    id="line-hero"
-                    type="text"
-                    value={lineInput}
-                    onChange={(e) => {
-                      setLineInput(e.target.value);
-                      setLineInvalid(false);
-                    }}
-                    aria-invalid={lineInvalid}
-                    placeholder="304"
-                    maxLength={MAX_LINE_LENGTH}
-                    autoComplete="off"
-                    className="h-14 w-full rounded-lg border border-overlay/10 bg-overlay/5 px-5 text-2xl font-black text-ink placeholder-subtle outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-3xl"
-                  />
-                </div>
+              <LineStatsSearchFields search={search} />
 
-                <div>
-                  <label htmlFor="start-hero" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
-                    {t.stats.dateRange}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <LocalizedDateInput
-                      id="start-hero"
-                      value={startDate}
-                      min={MIN_STATS_DATE}
-                      max={maxStatsDate}
-                      onChange={handleStartDateChange}
-                      className="h-11 min-w-0 flex-1"
-                    />
-                    <span className="shrink-0 text-xs text-subtle">—</span>
-                    <LocalizedDateInput
-                      id="end-hero"
-                      value={endDate}
-                      min={MIN_STATS_DATE}
-                      max={maxStatsDate}
-                      onChange={handleEndDateChange}
-                      className="h-11 min-w-0 flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <label className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-subtle">
-                  {t.stats.estimations}
-                </label>
-              <button
-                type="button"
-                onClick={() => setEstimated((v) => !v)}
-                className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
-                  estimated
-                    ? 'border-blue-500/40 bg-overlay/5'
-                    : 'border-overlay/10 bg-overlay/5'
-                }`}
-              >
-                <div
-                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-                    estimated ? 'bg-blue-500' : 'bg-control'
-                  }`}
-                >
-                  <div
-                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                      estimated ? 'translate-x-4' : 'translate-x-0.5'
-                    }`}
-                  />
-                </div>
-                <div>
-                  <span className={`text-sm font-semibold ${estimated ? 'text-accent' : 'text-ink'}`}>
-                    {t.stats.includeEstimations}
-                  </span>
-                  <p className="min-h-[2lh] text-[11px] text-subtle">
-                    {t.stats.estimationsHelp}
-                  </p>
-                </div>
-              </button>
-              </div>
-
-              <button
-                type="submit"
+              <LineSearchButton
+                search={search}
                 aria-busy={isInitialLoading}
-                disabled={!canSubmit}
                 className="group relative mt-4 block w-full -skew-x-12 cursor-pointer overflow-hidden rounded-sm bg-blue-600 py-3.5 text-sm font-bold uppercase tracking-widest text-white shadow-xl shadow-blue-600/25 transition hover:bg-blue-500 hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none"
               >
                 <span className="relative z-10 inline-block skew-x-12">{t.stats.search}</span>
                 <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-overlay/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
-              </button>
-              {lineInvalid && (
-                <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-negative">
-                  {t.api.linePattern}
-                </div>
-              )}
+              </LineSearchButton>
               {!lineInvalid && hasError && !hasAnyData && !isLoading && (
                 <div role="alert" className="mt-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-negative">
                   {getErrorMessage(firstError, language)}
@@ -572,20 +311,8 @@ export default function StatsPage() {
               </div>
           </div>
         )}
-        {query && (
-          <section aria-label={t.delayMap.title} className="mt-8 sm:mt-10">
-            <SectionHeader title={t.delayMap.title} subtitle={t.delayMap.subtitle} />
-            {delayMap.data ? (
-              <DelayMap key={JSON.stringify([query.line, query.start, query.end, query.estimated, mapSearchVersion, delayMap.dataUpdatedAt])} data={delayMap.data} />
-            ) : delayMap.error instanceof ApiClientError && delayMap.error.status === 404 && delayMap.error.errorCode === 'RESOURCE_NOT_FOUND' ? (
-              <p role="status" className="py-8 text-center text-sm text-subtle">{getErrorMessage(delayMap.error, language)}</p>
-            ) : delayMap.error ? (
-              <SectionError error={delayMap.error} />
-            ) : <SectionLoading />}
-          </section>
-        )}
+        {query && <DelayMapPromo query={query} />}
       </div>
-
     </div>
   );
 }
