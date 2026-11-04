@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { Vehicle } from '../types/api';
 import { getLineColor } from './lineColors';
 import { useI18n } from '../i18n-core';
@@ -11,6 +11,8 @@ interface LineFilterProps {
   onHideAll: () => void;
   isOpen: boolean;
   onToggleOpen: () => void;
+  legendOpen: boolean;
+  onToggleLegend: () => void;
 }
 
 export default function LineFilter({
@@ -21,8 +23,9 @@ export default function LineFilter({
   onHideAll,
   isOpen,
   onToggleOpen,
+  legendOpen,
+  onToggleLegend,
 }: LineFilterProps) {
-  const [legendOpen, setLegendOpen] = useState(false);
   const { t } = useI18n();
 
   const legend = [
@@ -64,10 +67,7 @@ export default function LineFilter({
     <div className="absolute top-4 left-4 z-[1000] flex max-h-[45%] flex-col sm:max-h-none">
       <div className="flex shrink-0 gap-2">
         <button
-          onClick={() => {
-            setLegendOpen(false);
-            onToggleOpen();
-          }}
+          onClick={onToggleOpen}
           className="flex cursor-pointer items-center gap-2 rounded-xl bg-surface/90 px-4 py-2 text-sm font-medium text-ink shadow-lg backdrop-blur-sm transition hover:bg-raised/90"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -82,10 +82,7 @@ export default function LineFilter({
         </button>
 
         <button
-          onClick={() => {
-            if (isOpen) onToggleOpen();
-            setLegendOpen((p) => !p);
-          }}
+          onClick={onToggleLegend}
           className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-surface/90 px-3 py-2 text-sm font-medium text-ink shadow-lg backdrop-blur-sm transition hover:bg-raised/90"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

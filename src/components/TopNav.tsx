@@ -6,10 +6,11 @@ import { useTheme } from '../theme-core';
 interface TopNavProps {
   currentPage: Page;
   onNavigate: (page: Page) => void;
+  mobileMenuOpen: boolean;
+  onMobileMenuChange: (open: boolean) => void;
 }
 
-export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export default function TopNav({ currentPage, onNavigate, mobileMenuOpen, onMobileMenuChange }: TopNavProps) {
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const { language, setLanguage, t } = useI18n();
   const { theme, toggleTheme } = useTheme();
@@ -23,7 +24,7 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
 
   const handleNavigate = (page: Page) => {
     onNavigate(page);
-    setMobileMenuOpen(false);
+    onMobileMenuChange(false);
     setLanguageMenuOpen(false);
   };
 
@@ -39,7 +40,7 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
         <button
           onClick={() => {
             setLanguageMenuOpen(false);
-            setMobileMenuOpen((prev) => !prev);
+            onMobileMenuChange(!mobileMenuOpen);
           }}
           className="mr-2 flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink transition-colors hover:bg-overlay/5 min-[820px]:hidden"
           aria-label="Menu"
@@ -108,7 +109,7 @@ export default function TopNav({ currentPage, onNavigate }: TopNavProps) {
           <button
             type="button"
             onClick={() => {
-              setMobileMenuOpen(false);
+              onMobileMenuChange(false);
               setLanguageMenuOpen((prev) => !prev);
             }}
             aria-label={language === 'pl' ? t.language.switchToEnglish : t.language.switchToPolish}
