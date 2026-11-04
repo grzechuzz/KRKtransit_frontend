@@ -5,6 +5,7 @@
   color-scheme: dark;
   --app-canvas: #030712;
   --app-surface: #111827;
+  --app-table: color-mix(in srgb, var(--app-canvas) 25%, var(--app-surface));
   --app-raised: #1f2937;
   --app-control: #374151;
   --app-ink: #ffffff;
@@ -26,6 +27,7 @@
   color-scheme: light;
   --app-canvas: #f3f6fb;
   --app-surface: #ffffff;
+  --app-table: #f8fafc;
   --app-raised: #e9eff8;
   --app-control: #cbd5e1;
   --app-ink: #0f172a;
@@ -46,6 +48,7 @@
 @theme inline {
   --color-canvas: var(--app-canvas);
   --color-surface: var(--app-surface);
+  --color-table: var(--app-table);
   --color-raised: var(--app-raised);
   --color-control: var(--app-control);
   --color-ink: var(--app-ink);

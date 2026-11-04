@@ -51,6 +51,7 @@ export interface UpcomingStopsResponse {
     sequence: number;
     scheduled_arrival: string;
     predicted_arrival: string | null;
+    prediction_source: 'ML' | 'OPERATOR' | null;
   }[];
 }
 
