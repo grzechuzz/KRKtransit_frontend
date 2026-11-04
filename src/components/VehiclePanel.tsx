@@ -34,6 +34,12 @@ function UpcomingStops({ query, defaultExpanded = true, compactCollapsed = false
   const { t } = useI18n();
   const labels = t.vehiclePanel;
   const { data, error, isPending } = query;
+  const predictionSource = data?.stops.find((stop) => stop.prediction_source != null)?.prediction_source;
+  const predictionSourceLabel = predictionSource === 'ML'
+    ? labels.predictionMLSource
+    : predictionSource === 'OPERATOR'
+      ? labels.predictionOperatorSource
+      : null;
   const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
   const expanded = controlledExpanded ?? localExpanded;
   const toggleExpanded = () => {
@@ -83,19 +89,20 @@ function UpcomingStops({ query, defaultExpanded = true, compactCollapsed = false
       {message ? (
         <p role="status" className="py-3 text-sm leading-relaxed text-body">{message}</p>
       ) : (
+        <>
         <div
           role="region"
           aria-label={labels.upcomingStops}
           tabIndex={0}
-          className="max-h-[min(10rem,25dvh)] overflow-y-auto overscroll-contain rounded-lg border border-overlay/5 bg-canvas/25 [[data-theme=light]_&]:bg-[#f8fafc] [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-blue-400 sm:max-h-none"
+          className="max-h-[min(10rem,25dvh)] overflow-y-auto overscroll-contain rounded-lg border border-overlay/5 bg-table [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-blue-400 sm:max-h-none"
         >
-        <table className="w-full table-fixed text-sm">
+        <table aria-describedby={predictionSourceLabel ? `${contentId}-source` : undefined} className="w-full table-fixed text-sm">
           <caption className="sr-only">{labels.upcomingStops}</caption>
           <thead>
             <tr className="text-xs text-muted">
-              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2 text-left font-medium [[data-theme=light]_&]:bg-[#f8fafc]">{labels.stop}</th>
-              <th scope="col" className="sticky top-0 z-10 w-16 bg-surface py-2 text-center font-medium [[data-theme=light]_&]:bg-[#f8fafc]">{labels.scheduled}</th>
-              <th scope="col" className="sticky top-0 z-10 w-20 bg-surface py-2 pr-2 text-center font-medium text-accent-strong [[data-theme=light]_&]:bg-[#f8fafc]">{labels.predicted}</th>
+              <th scope="col" className="sticky top-0 z-10 bg-table px-3 py-2 text-left align-top font-medium">{labels.stop}</th>
+              <th scope="col" className="sticky top-0 z-10 w-16 bg-table py-2 text-center align-top font-medium">{labels.scheduled}</th>
+              <th scope="col" className="sticky top-0 z-10 w-20 bg-table py-2 pr-2 text-center align-top font-medium text-accent-strong">{labels.predicted}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-overlay/5">
@@ -118,6 +125,24 @@ function UpcomingStops({ query, defaultExpanded = true, compactCollapsed = false
           </tbody>
         </table>
         </div>
+        {predictionSourceLabel && (
+          <p id={`${contentId}-source`} className="mt-1.5 -mb-0.5 flex items-center justify-end gap-1.5 px-1 text-right text-[10px] leading-normal text-muted sm:mt-2.5 sm:-mb-2.5">
+            <span>{labels.predictionSource}</span>
+            <span
+              title={predictionSource === 'ML' ? labels.predictionMLHint : undefined}
+              className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap ${predictionSource === 'ML' ? 'cursor-help text-accent' : ''}`}
+            >
+              {predictionSource === 'ML' && (
+                <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" className="h-3 w-3 shrink-0">
+                  <path d="m8 3 1.75 5.25L15 10l-5.25 1.75L8 17l-1.75-5.25L1 10l5.25-1.75L8 3Z" />
+                  <path d="m16 1 .75 2.25L19 4l-2.25.75L16 7l-.75-2.25L13 4l2.25-.75L16 1Z" />
+                </svg>
+              )}
+              {predictionSourceLabel}
+            </span>
+          </p>
+        )}
+        </>
       )}
       </div>
     </section>

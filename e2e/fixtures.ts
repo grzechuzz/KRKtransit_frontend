@@ -7,9 +7,9 @@ const vehicles: Vehicle[] = [
   { trip_id: 'trip-139', license_plate: 'TEST139', line_number: '139', headsign: 'Pradnik Czerwony', shape_id: null, latitude: 50.075, longitude: 19.925, bearing: null, timestamp: '' },
 ];
 
-const stops: UpcomingStopsResponse['stops'] = [
-  { stop_id: 's1', stop_name: 'Prokocim Szpitale Uniwersyteckie', stop_desc: '05', sequence: 2, scheduled_arrival: '2026-11-04T00:10:00Z', predicted_arrival: '2026-11-04T00:12:00Z' },
-  { stop_id: 's2', stop_name: 'Jerzmanowskiego', stop_desc: '01', sequence: 3, scheduled_arrival: '2026-11-04T00:15:00Z', predicted_arrival: null },
+export const stops: UpcomingStopsResponse['stops'] = [
+  { stop_id: 's1', stop_name: 'Prokocim Szpitale Uniwersyteckie', stop_desc: '05', sequence: 2, scheduled_arrival: '2026-11-04T00:10:00Z', predicted_arrival: '2026-11-04T00:12:00Z', prediction_source: 'ML' },
+  { stop_id: 's2', stop_name: 'Jerzmanowskiego', stop_desc: '01', sequence: 3, scheduled_arrival: '2026-11-04T00:15:00Z', predicted_arrival: null, prediction_source: null },
 ];
 
 export const segment: MaxDelayEntry = {
