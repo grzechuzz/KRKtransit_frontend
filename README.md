@@ -17,6 +17,8 @@ Jeśli backend działa na innym porcie niż `8080`:
 API_PROXY_TARGET=http://127.0.0.1:8081 npm run dev
 ```
 
+Lokalny backend zbiera dane dopiero od uruchomienia, więc statystyki i mapa opóźnień będą na początku puste. Serwis z pełną historią i statystykami jest dostępny pod adresem [krktransit.pl](https://krktransit.pl).
+
 ## Technologie
 
 React, TypeScript, Vite, Tailwind CSS, Leaflet, TanStack Query, Vitest, Playwright.
