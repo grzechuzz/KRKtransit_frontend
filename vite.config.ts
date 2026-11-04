@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/v1': {
-        target: 'https://api.krktransit.pl',
+        target: process.env.API_PROXY_TARGET ?? 'http://127.0.0.1:8080',
         changeOrigin: true,
       },
     },

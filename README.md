@@ -1,36 +1,24 @@
-# KRK Transit — frontend
+# KRK Transit frontend
 
-Mapa pojazdów komunikacji miejskiej w Krakowie i statystyki opóźnień.
-React, TypeScript, Vite, Tailwind CSS i Leaflet.
+Frontend KRK Transit z mapą pojazdów na żywo i statystykami opóźnień.
 
-## Praca lokalna
+## Uruchomienie
 
-Wymagany Node.js 22.12+ i npm.
-
-W katalogu repozytorium frontendu uruchom:
+Wymagane: Node.js 22.12+, npm i uruchomiony [backend](https://github.com/grzechuzz/KRKtransit).
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Otwórz adres podany przez Vite w terminalu (domyślnie `http://localhost:5173`).
-Zmiany w kodzie pojawiają się w przeglądarce automatycznie.
-
-Vite przekazuje zapytania `/v1` do `https://api.krktransit.pl`.
-Nie trzeba uruchamiać lokalnego backendu ani konfigurować pliku `.env`.
-Dane mapy i statystyk wymagają połączenia z API.
-
-## Sprawdzenie zmian
-
-Widoki mają osobne adresy: `/map`, `/stats` i `/about`.
-Odświeżenie zachowuje wybrany widok; działają też przyciski Wstecz/Dalej
-oraz bezpośrednie linki. Hosting musi zwracać `index.html` dla nieznanych
-ścieżek; Vite robi to w `npm run dev` i `npm run preview`.
+Jeśli backend działa na innym porcie niż `8080`:
 
 ```bash
-npm run lint
-npm run build
+API_PROXY_TARGET=http://127.0.0.1:8081 npm run dev
 ```
 
-Build trafia do `dist/`. Można go sprawdzić lokalnie przez `npm run preview`.
+Lokalny backend zbiera dane dopiero od uruchomienia, więc statystyki i mapa opóźnień będą na początku puste. Serwis z pełną historią i statystykami jest dostępny pod adresem [krktransit.pl](https://krktransit.pl).
+
+## Technologie
+
+React, TypeScript, Vite, Tailwind CSS, Leaflet, TanStack Query, Vitest, Playwright.
