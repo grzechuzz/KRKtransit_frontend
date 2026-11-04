@@ -42,6 +42,8 @@ ehthumbs.db
 Desktop.ini
 
 # Testing & coverage
+playwright-report
+test-results
 coverage
 *.lcov
 .nyc_output
