@@ -22,20 +22,6 @@ interface DelayResultsProps {
   kind: 'segment' | 'route';
 }
 
-const actualDateFormatter = new Intl.DateTimeFormat('en', {
-  timeZone: 'Europe/Warsaw',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
-
-function hasDifferentActualDate(row: DelayResultRow) {
-  const parts = actualDateFormatter.formatToParts(new Date(row.fromEventTime));
-  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((value) => value.type === type)?.value;
-  const actualDate = `${part('year')}-${part('month')}-${part('day')}`;
-  return actualDate !== row.serviceDate;
-}
-
 function delayColor(seconds: number) {
   if (seconds < 0) return 'text-positive';
   if (seconds === 0) return 'text-muted';
@@ -200,15 +186,9 @@ export default function DelayResults({ rows, tripsAnalyzed, kind }: DelayResults
               </p>
               <dl className="shrink-0 text-right tabular-nums">
                 <div>
-                  <dt className="sr-only">{t.tables.serviceDateTop} {t.tables.serviceDateBottom}</dt>
-                  <dd><time dateTime={row.serviceDate}>{fullDate(row.serviceDate)}</time></dd>
+                  <dt className="sr-only">{t.tables.actualDateTop} {t.tables.actualDateBottom}</dt>
+                  <dd><time dateTime={row.fromEventTime}>{fullDate(row.fromEventTime)}</time></dd>
                 </div>
-                {hasDifferentActualDate(row) && (
-                  <div className="flex justify-end gap-1 text-subtle">
-                    <dt>{t.tables.actualDateLabel}:</dt>
-                    <dd><time dateTime={row.fromEventTime}>{date(row.fromEventTime)}</time></dd>
-                  </div>
-                )}
               </dl>
             </div>
           </li>

@@ -24,15 +24,17 @@ function ArrivalTime({ value }: { value: string | null }) {
   return <time dateTime={value}>{arrivalTimeFormatter.format(new Date(value))}</time>;
 }
 
-function UpcomingStops({ query, defaultExpanded = true }: {
+function UpcomingStops({ query, defaultExpanded = true, compactCollapsed = false }: {
   query: VehiclePanelProps['upcomingStops'];
   defaultExpanded?: boolean;
+  compactCollapsed?: boolean;
 }) {
   const { t } = useI18n();
   const labels = t.vehiclePanel;
   const { data, error, isPending } = query;
   const [expanded, setExpanded] = useState(defaultExpanded);
   const contentId = useId();
+  const showCompactButton = compactCollapsed && !expanded;
 
   let message: string | null = null;
   if (error) {
@@ -50,18 +52,22 @@ function UpcomingStops({ query, defaultExpanded = true }: {
   }
 
   return (
-    <section className={`mt-3 border-t border-overlay/10 ${expanded ? '' : 'sm:-mb-3'}`}>
+    <section className={showCompactButton ? 'mt-2' : `mt-3 border-t border-overlay/10 ${expanded ? '' : 'sm:-mb-3'}`}>
       <h2>
         <button
           type="button"
           aria-expanded={expanded}
           aria-controls={contentId}
           onClick={() => setExpanded((value) => !value)}
-          className="flex min-h-11 w-full touch-manipulation cursor-pointer items-center gap-2 rounded-lg py-2 text-left text-sm font-semibold text-ink transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+          className={`flex min-h-11 w-full touch-manipulation cursor-pointer items-center gap-2 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 ${showCompactButton ? 'rounded-xl border border-overlay/5 bg-canvas/25 px-3 font-medium text-strong hover:border-overlay/15 active:border-overlay/20 [[data-theme=light]_&]:bg-[#f8fafc]' : 'rounded-lg font-semibold text-ink hover:text-ink'}`}
         >
           <span className="min-w-0 flex-1">{labels.upcomingStops}</span>
-          <span className="text-xs font-normal text-accent-strong">{expanded ? labels.collapseStops : labels.expandStops}</span>
-          <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className={`h-4 w-4 shrink-0 text-accent-strong transition-transform motion-reduce:transition-none ${expanded ? 'rotate-180' : ''}`}>
+          {!showCompactButton && (
+            <span className="shrink-0 text-xs font-normal text-accent-strong">
+              {expanded ? labels.collapseStops : labels.expandStops}
+            </span>
+          )}
+          <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${showCompactButton ? 'text-muted' : 'text-accent-strong'} ${expanded ? 'rotate-180' : ''}`}>
             <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
@@ -74,15 +80,15 @@ function UpcomingStops({ query, defaultExpanded = true }: {
           role="region"
           aria-label={labels.upcomingStops}
           tabIndex={0}
-          className="max-h-[min(10rem,25dvh)] overflow-y-auto overscroll-contain rounded-lg border border-overlay/5 bg-canvas/25 [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-blue-400 sm:max-h-none"
+          className="max-h-[min(10rem,25dvh)] overflow-y-auto overscroll-contain rounded-lg border border-overlay/5 bg-canvas/25 [[data-theme=light]_&]:bg-[#f8fafc] [scrollbar-width:thin] focus-visible:outline-2 focus-visible:outline-blue-400 sm:max-h-none"
         >
         <table className="w-full table-fixed text-sm">
           <caption className="sr-only">{labels.upcomingStops}</caption>
           <thead>
             <tr className="text-xs text-muted">
-              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2 text-left font-medium">{labels.stop}</th>
-              <th scope="col" className="sticky top-0 z-10 w-16 bg-surface py-2 text-center font-medium">{labels.scheduled}</th>
-              <th scope="col" className="sticky top-0 z-10 w-20 bg-surface py-2 pr-2 text-center font-medium text-accent-strong">{labels.predicted}</th>
+              <th scope="col" className="sticky top-0 z-10 bg-surface px-3 py-2 text-left font-medium [[data-theme=light]_&]:bg-[#f8fafc]">{labels.stop}</th>
+              <th scope="col" className="sticky top-0 z-10 w-16 bg-surface py-2 text-center font-medium [[data-theme=light]_&]:bg-[#f8fafc]">{labels.scheduled}</th>
+              <th scope="col" className="sticky top-0 z-10 w-20 bg-surface py-2 pr-2 text-center font-medium text-accent-strong [[data-theme=light]_&]:bg-[#f8fafc]">{labels.predicted}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-overlay/5">
@@ -157,13 +163,15 @@ export function MobileVehicleBar({ vehicle, onClose, upcomingStops }: VehiclePan
         <button
           onClick={onClose}
           type="button"
-          className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full bg-overlay/10 text-sm text-ink transition-colors hover:bg-overlay/20 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+          className="flex h-11 w-11 shrink-0 touch-manipulation cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-overlay/5 hover:text-ink active:bg-overlay/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
           aria-label={t.vehiclePanel.close}
         >
-          X
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" className="h-5 w-5">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
         </button>
       </div>
-      <UpcomingStops key={vehicle.license_plate} query={upcomingStops} defaultExpanded={false} />
+      <UpcomingStops key={vehicle.license_plate} query={upcomingStops} defaultExpanded={false} compactCollapsed />
     </div>
   );
 }
@@ -185,10 +193,12 @@ export default function VehiclePanel({ vehicle, onClose, upcomingStops }: Vehicl
         <button
           type="button"
           onClick={onClose}
-          className="flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-full bg-overlay/10 text-sm text-ink transition-colors hover:bg-overlay/20 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+          className="flex h-8 w-8 shrink-0 touch-manipulation cursor-pointer items-center justify-center rounded-full text-muted transition-colors hover:bg-overlay/5 hover:text-ink active:bg-overlay/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
           aria-label={t.vehiclePanel.close}
         >
-          X
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" className="h-5 w-5">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
         </button>
       </div>
 
