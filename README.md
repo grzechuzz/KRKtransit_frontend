@@ -4,7 +4,7 @@ Frontend KRK Transit z mapą pojazdów na żywo i statystykami opóźnień.
 
 ## Uruchomienie
 
-Wymagane: Node.js 22.12+, npm i uruchomiony [backend](https://github.com/grzechuzz/KRKtransit).
+Wymagane: **Node.js 24 LTS**, npm i uruchomiony [backend](https://github.com/grzechuzz/KRKtransit). Tej samej wersji Node.js używa CI.
 
 ```bash
 npm ci
