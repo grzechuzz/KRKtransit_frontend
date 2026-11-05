@@ -39,11 +39,11 @@ describe('delay map controls', () => {
   it('supports repeated or empty headsigns and keeps the band when changing direction', () => {
     renderMap();
     expect(within(screen.getByRole('group', { name: translations.pl.delayMap.direction })).getAllByRole('button')).toHaveLength(3);
-    expect(screen.getAllByRole('button', { name: 'Przystanek D', exact: true })[0]).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getAllByRole('button', { name: 'Przystanek D' })[0]).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('combobox'));
     expect(screen.getAllByRole('option')).toHaveLength(6);
     selectBand('AFTERNOON');
-    fireEvent.click(screen.getAllByRole('button', { name: 'Przystanek D', exact: true })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Przystanek D' })[1]);
     expect(screen.getByTestId('layers')).toHaveTextContent('AFTERNOON');
     expect(screen.getByRole('status')).toHaveTextContent(translations.pl.delayMap.noBandMeasurements);
     fireEvent.click(screen.getByRole('button', { name: 'Kierunek 3' }));
