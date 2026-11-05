@@ -31,7 +31,7 @@ for (const theme of ['light', 'dark']) {
   test(`promotes the map without loading it and preserves context in ${theme}`, async ({ page, apiRequests }, info) => {
     await page.addInitScript(value => localStorage.setItem('krk-transit-theme', value), theme);
     await page.goto(`/stats?${context}`);
-    const promo = page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true });
+    const promo = page.getByRole('region', { name: 'Mapa opóźnień', exact: true });
     await expect(promo.getByRole('heading', { name: 'Gdzie pojazdy tracą najwięcej czasu?' })).toBeVisible();
     const cta = promo.getByRole('link', { name: 'Zobacz mapę opóźnień' });
     await expect(cta).toHaveAttribute('href', `/delay-map?${context}`);
@@ -55,7 +55,7 @@ for (const theme of ['light', 'dark']) {
     await expect(page.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('.delay-map-segment')).toHaveCount(3);
     await page.screenshot({ path: info.outputPath(`map-${theme}.png`), fullPage: true });
-    await page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true }).screenshot({ path: info.outputPath(`map-results-${theme}.png`) });
+    await page.getByRole('region', { name: 'Mapa opóźnień', exact: true }).screenshot({ path: info.outputPath(`map-results-${theme}.png`) });
   });
 }
 
@@ -85,7 +85,7 @@ test('English promotion and empty navigation from another page are translated', 
   if (info.project.name === 'mobile') await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('button', { name: 'DELAY MAP', exact: true }).click();
   await expect(page).toHaveURL('/delay-map');
-  await expect(page.getByRole('heading', { name: 'Delay growth map' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Delay map' })).toBeVisible();
   await expect(page.getByRole('status')).toContainText('Choose a line and date range');
   await expect(page.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
 });
@@ -115,7 +115,7 @@ test('clicking the active delay map tab clears the search and returns to the top
   await expect(page).toHaveURL('/delay-map');
   await expect(page.getByLabel('Numer linii', { exact: true })).toHaveValue('');
   await expect.poll(() => container.evaluate(element => element.scrollTop)).toBe(0);
-  await expect(page.getByRole('heading', { name: 'Mapa przyrostu opóźnień' })).toBeInViewport();
+  await expect(page.getByRole('heading', { name: 'Mapa opóźnień' })).toBeInViewport();
 });
 
 test('navigation fits narrow screens and switches at the new breakpoint', async ({ page }, info) => {

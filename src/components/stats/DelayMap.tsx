@@ -6,15 +6,15 @@ import { useI18n } from '../../i18n-core';
 import DelayMapLayers from './DelayMapLayers';
 import DelayMapViewport from './DelayMapViewport';
 import DelayMapLegend from './DelayMapLegend';
+import DelayBandSelect from './DelayBandSelect';
 
-const BANDS: DelayBand[] = ['ALL_DAY', 'MORNING', 'MIDDAY', 'AFTERNOON', 'EVENING_NIGHT', 'WEEKEND'];
 const MAX_BOUNDS = latLngBounds([49.0, 18.5], [51.0, 21.5]);
 
 export default function DelayMap({ data }: { data: DelayMapResponse }) {
   const { t } = useI18n();
   const [directionIndex, setDirectionIndex] = useState(0);
   const [band, setBand] = useState<DelayBand>('ALL_DAY');
-  const bandId = useId();
+  const interpretationId = useId();
   const direction = data.directions[directionIndex] ?? data.directions[0];
 
   if (!direction) return <p role="status" className="py-8 text-center text-sm text-subtle">{t.delayMap.noRoute}</p>;
@@ -24,7 +24,7 @@ export default function DelayMap({ data }: { data: DelayMapResponse }) {
     <div>
       <div className="mb-4 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start">
         <fieldset className="min-w-0 flex-1">
-          <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-subtle">{t.delayMap.direction}</legend>
+          <legend className="mb-1 text-xs font-medium uppercase tracking-widest text-subtle">{t.delayMap.direction}</legend>
           <div className="flex flex-wrap gap-2">
             {data.directions.map((item, index) => (
               <button key={index} type="button" aria-pressed={index === directionIndex} onClick={() => setDirectionIndex(index)} className={`min-h-11 max-w-full cursor-pointer break-words rounded-lg border px-3 py-2 text-left text-sm font-semibold transition ${index === directionIndex ? 'border-blue-500/40 bg-blue-500/10 text-accent' : 'border-overlay/10 bg-surface text-body hover:bg-raised'}`}>
@@ -34,10 +34,7 @@ export default function DelayMap({ data }: { data: DelayMapResponse }) {
           </div>
         </fieldset>
         <div className="min-w-0 sm:max-w-md lg:w-72 lg:shrink-0">
-          <label htmlFor={bandId} className="mb-2 block text-xs font-semibold uppercase tracking-wide text-subtle">{t.delayMap.timeBand}</label>
-          <select id={bandId} value={band} onChange={event => setBand(event.target.value as DelayBand)} className="min-h-11 w-full min-w-0 rounded-lg border border-overlay/10 bg-surface px-3 py-2 text-sm text-ink">
-            {BANDS.map(value => <option key={value} value={value}>{t.delayMap.bands[value]}</option>)}
-          </select>
+          <DelayBandSelect value={band} onChange={setBand} />
         </div>
       </div>
       {direction.segments.length ? (
@@ -48,11 +45,16 @@ export default function DelayMap({ data }: { data: DelayMapResponse }) {
             <DelayMapViewport direction={direction} />
             <DelayMapLayers key={`${directionIndex}:${band}`} direction={direction} band={band} />
           </MapContainer>
+          <DelayMapLegend />
         </div>
       ) : <p role="status" className="py-8 text-center text-sm text-subtle">{t.delayMap.noSegments}</p>}
       {direction.segments.length > 0 && !hasMeasurements && <p role="status" className="mt-3 text-sm text-subtle">{t.delayMap.noBandMeasurements}</p>}
-      <DelayMapLegend />
-      <p className="mt-4 text-xs leading-relaxed text-subtle">{t.delayMap.note}</p>
+      <section aria-labelledby={interpretationId} className="mt-4 max-w-4xl space-y-2 text-xs leading-relaxed text-muted sm:text-sm">
+        <h2 id={interpretationId} className="text-sm font-semibold text-ink">{t.delayMap.interpretation.title}</h2>
+        <p>{t.delayMap.interpretation.description}</p>
+        <p className="font-semibold text-body">{t.delayMap.interpretation.formula}</p>
+        <p>{t.delayMap.interpretation.meaning}</p>
+      </section>
     </div>
   );
 }

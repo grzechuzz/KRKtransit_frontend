@@ -1,9 +1,11 @@
 import { Fragment, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { CircleMarker, Pane, useMapEvents } from 'react-leaflet';
-import type { LatLng, LeafletMouseEvent } from 'leaflet';
+import { latLng } from 'leaflet';
+import type { LatLng } from 'leaflet';
 import type { DelayBand, DelayMapDirection } from '../../types/api';
 import DelayMapSegment from './DelayMapSegment';
 import DelayMapTooltip from './DelayMapTooltip';
+import MapStopDot from '../MapStopDot';
 
 interface ActiveItem {
   key: string;
@@ -29,10 +31,10 @@ export default function DelayMapLayers({ direction, band }: { direction: DelayMa
     window.addEventListener('keydown', dismiss);
     return () => window.removeEventListener('keydown', dismiss);
   }, []);
-  const enter = (key: string, event: LeafletMouseEvent) => setActive({ key, position: event.latlng, pinned: false });
+  const enter = (key: string, position: LatLng) => setActive(current => current?.pinned ? current : { key, position, pinned: false });
   const leave = () => setActive(current => current?.pinned ? current : null);
-  const select = (key: string, event: LeafletMouseEvent) => setActive(current =>
-    current?.key === key && current.pinned ? null : { key, position: event.latlng, pinned: true });
+  const select = (key: string, position: LatLng) => setActive(current =>
+    current?.key === key && current.pinned ? null : { key, position, pinned: true });
 
   return (
     <>
@@ -46,9 +48,9 @@ export default function DelayMapLayers({ direction, band }: { direction: DelayMa
             from={stops.get(segment.from_stop_key)}
             to={stops.get(segment.to_stop_key)}
             position={active?.key === key ? active.position : undefined}
-            onEnter={event => enter(key, event)}
+            onEnter={event => enter(key, event.latlng)}
             onLeave={leave}
-            onSelect={event => select(key, event)}
+            onSelect={event => select(key, event.latlng)}
           />
         );
       })}
@@ -56,20 +58,22 @@ export default function DelayMapLayers({ direction, band }: { direction: DelayMa
         {direction.stops.map(stop => {
           const key = `stop:${stop.stop_key}`;
           const center: [number, number] = [stop.latitude, stop.longitude];
+          const position = latLng(center);
+          const stopNumber = stop.stop_desc?.trim();
           return (
             <Fragment key={key}>
-              <CircleMarker center={center} radius={5} interactive={false} pathOptions={{ color: 'var(--app-surface)', weight: 2, fillColor: 'var(--app-accent)', fillOpacity: 1 }} />
+              <MapStopDot center={center} className="delay-map-stop" radius={5} />
               <CircleMarker
                 center={center}
-                radius={coarsePointer ? 18 : 8}
+                radius={coarsePointer ? 18 : 9}
                 bubblingMouseEvents={false}
                 className="delay-map-stop-hit"
                 pathOptions={{ opacity: 0, fillOpacity: 0, weight: 0 }}
-                eventHandlers={{ mouseover: event => enter(key, event), mouseout: leave, click: event => select(key, event) }}
+                eventHandlers={{ mouseover: () => enter(key, position), mouseout: leave, click: () => select(key, position) }}
               >
                 {active?.key === key && (
-                  <DelayMapTooltip position={active.position}>
-                    {stop.stop_name}{stop.stop_desc ? ` (${stop.stop_desc})` : ''}
+                  <DelayMapTooltip position={active.position} variant="stop">
+                    <span className="text-sm font-medium">{stop.stop_name}{stopNumber ? ` ${stopNumber}` : ''}</span>
                   </DelayMapTooltip>
                 )}
               </CircleMarker>

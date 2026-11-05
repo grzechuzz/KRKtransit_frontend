@@ -50,7 +50,7 @@ export default function LocalizedDateInput({
       />
       <div
         aria-hidden="true"
-        className="flex h-full w-full items-center justify-between gap-2 rounded-lg border border-overlay/10 bg-overlay/5 px-3 text-sm text-ink outline-none transition peer-focus:border-blue-500 peer-focus:ring-1 peer-focus:ring-blue-500"
+        className="flex h-full w-full items-center justify-between gap-2 rounded-lg border border-overlay/10 bg-field px-3 text-sm text-ink outline-none transition peer-focus:border-blue-500 peer-focus:ring-1 peer-focus:ring-blue-500"
       >
         <span className="truncate">{formatDateLabel(value, locale)}</span>
         <svg

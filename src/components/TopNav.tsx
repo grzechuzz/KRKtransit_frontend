@@ -105,7 +105,7 @@ export default function TopNav({ currentPage, onNavigate, mobileMenuOpen, onMobi
               </svg>
             ) : (
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.9 13.1A9 9 0 0 1 10.9 3.1 9 9 0 1 0 20.9 13.1Z" />
+                <path d="M9.1 3.3a9 9 0 1 0 11.6 11.6 9 9 0 0 1-11.6-11.6Z" />
               </svg>
             )}
           </button>

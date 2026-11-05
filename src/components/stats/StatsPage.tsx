@@ -8,31 +8,10 @@ import TrendChart from './TrendChart';
 import DelayMapPromo from './DelayMapPromo';
 import LineStatsSearchFields from './LineStatsSearchFields';
 import LineSearchButton from './LineSearchButton';
+import SectionHeader from './SectionHeader';
 import { useLineStatsSearch } from '../../hooks/useLineStatsSearch';
 import { formatDateLabel } from '../../utils/lineStatsSearch';
 import { useI18n } from '../../i18n-core';
-
-/* ── Section Header ───────────────────────────────────── */
-
-function SectionHeader({ title, subtitle, badge }: { title: string; subtitle: string; badge?: string }) {
-  return (
-    <div className="mb-5">
-      <div className="flex items-center gap-3">
-        <div className="h-7 w-1.5 shrink-0 -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
-        {badge && (
-          <span className="-skew-x-12 shrink-0 whitespace-nowrap rounded bg-blue-600 px-2.5 py-1 text-sm font-black tracking-widest text-white shadow-lg shadow-blue-600/30 sm:px-2.5 sm:py-0.5 sm:text-xs">
-            <span className="inline-block skew-x-12">{badge}</span>
-          </span>
-        )}
-        <h2 className="text-lg font-black uppercase tracking-wide text-ink sm:text-xl">
-          {title}
-        </h2>
-      </div>
-      <p className="mt-2 text-xs text-subtle sm:text-sm">{subtitle}</p>
-      <div className="mt-3 h-px bg-gradient-to-r from-blue-500/40 via-blue-500/10 to-transparent" />
-    </div>
-  );
-}
 
 function SectionLoading() {
   const { t } = useI18n();
@@ -179,7 +158,10 @@ export default function StatsPage() {
   const statsSubtitle = query ? lineRangeSubtitle(query.line, query.start, query.end) : t.stats.selectedRange;
 
   return (
-    <div ref={scrollContainerRef} className="h-full overflow-y-auto">
+    <div ref={scrollContainerRef} className="h-full overflow-y-auto" onPointerDownCapture={() => {
+      // Release the results focus before pointer scrolling so it cannot restore an old scroll position.
+      if (document.activeElement === resultsRef.current) resultsRef.current?.blur();
+    }}>
       <div className="mx-auto max-w-7xl px-4 py-6 pb-20 sm:px-8 sm:py-10 sm:pb-10">
 
         {/* Search stays above the results. */}

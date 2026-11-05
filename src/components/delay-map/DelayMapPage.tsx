@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiClientError, fetchDelayMap, getErrorMessage } from '../../api/client';
 import { useLineStatsSearch } from '../../hooks/useLineStatsSearch';
 import { useI18n } from '../../i18n-core';
-import { formatDateLabel, serializeStatsQuery } from '../../utils/lineStatsSearch';
+import { serializeStatsQuery } from '../../utils/lineStatsSearch';
 import DelayMap from '../stats/DelayMap';
 import LineStatsSearchFields from '../stats/LineStatsSearchFields';
 import LineSearchButton from '../stats/LineSearchButton';
@@ -12,7 +12,7 @@ import DelayMapPlaceholder from './DelayMapPlaceholder';
 import DelayMapLoading from './DelayMapLoading';
 
 export default function DelayMapPage() {
-  const { language, locale, t } = useI18n();
+  const { language, t } = useI18n();
   const search = useLineStatsSearch();
   const { query } = search;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -61,21 +61,27 @@ export default function DelayMapPage() {
   }, [query, result.data, result.error]);
 
   return (
-    <div ref={scrollContainerRef} className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-7xl px-4 py-6 pb-12 sm:px-8 sm:py-10">
-        <header className="mb-6">
-          <h1 className="text-2xl font-black uppercase tracking-wide text-ink sm:text-3xl">{t.delayMap.title}</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">{t.delayMap.description}</p>
-        </header>
-        <form onSubmit={submit} className="mb-6 rounded-2xl border border-overlay/10 bg-surface p-4 sm:p-6">
-          <LineStatsSearchFields search={search} compact />
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-subtle">{t.stats.nightLinesNote}</p>
-            <LineSearchButton search={search} aria-busy={result.isFetching} className="min-h-11 shrink-0 cursor-pointer rounded-lg bg-blue-600 px-8 py-3 text-sm font-bold text-white transition-colors hover:bg-blue-500 disabled:opacity-40 motion-reduce:transition-none">{t.stats.search}</LineSearchButton>
+    <div ref={scrollContainerRef} className="h-full overflow-y-auto" onPointerDownCapture={() => {
+      if (document.activeElement === resultsRef.current) resultsRef.current?.blur();
+    }}>
+      <div className="mx-auto max-w-7xl px-4 py-6 pb-12 sm:px-8">
+        <header className="mb-5">
+          <div className="flex items-center gap-3">
+            <span aria-hidden="true" className="h-8 w-1.5 shrink-0 -skew-x-12 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30" />
+            <h1 className="text-2xl font-black uppercase tracking-wide text-ink sm:text-3xl">{t.delayMap.title}</h1>
           </div>
+          <p className="mt-2 text-xs text-subtle sm:text-sm">{t.delayMap.description}</p>
+          <div aria-hidden="true" className="mt-3 h-px bg-gradient-to-r from-blue-500/40 via-blue-500/10 to-transparent" />
+        </header>
+        <form onSubmit={submit} className="mb-6 rounded-2xl border border-overlay/5 bg-gradient-to-b from-overlay/[0.04] to-transparent p-4 shadow-panel">
+          <LineStatsSearchFields search={search} compact action={
+            <LineSearchButton search={search} aria-busy={result.isFetching} className="min-h-11 w-full shrink-0 -skew-x-12 cursor-pointer rounded-sm bg-blue-600 px-5 py-2 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-blue-600/20 transition-[background-color,box-shadow] hover:bg-blue-500 hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none sm:mr-1 sm:w-auto motion-reduce:transition-none">
+              <span className="inline-block skew-x-12">{t.stats.search}</span>
+            </LineSearchButton>
+          } />
         </form>
         <section ref={resultsRef} tabIndex={-1} aria-label={t.delayMap.title} aria-busy={!!query && result.isFetching}>
-          {query && (!result.isFetching || result.data) && <p className="mb-5 text-sm font-semibold text-body">{t.stats.lineRange(query.line, formatDateLabel(query.start, locale), formatDateLabel(query.end, locale))}</p>}
+          <div aria-hidden="true" className="mb-6 h-px bg-gradient-to-r from-blue-500/25 via-blue-500/10 to-transparent" />
           {!query ? <DelayMapPlaceholder message={t.delayMap.searchPrompt} />
             : result.isFetching && !result.data ? <DelayMapLoading label={t.stats.loading} />
             : result.error ? <p role={empty ? 'status' : 'alert'} className={`rounded-xl border px-5 py-6 text-sm ${empty ? 'border-overlay/10 text-subtle' : 'border-red-500/20 bg-red-500/5 text-negative'}`}>{getErrorMessage(result.error, language)}</p>

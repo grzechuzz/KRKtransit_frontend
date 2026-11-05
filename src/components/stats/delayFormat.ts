@@ -38,6 +38,19 @@ export function formatDelay(seconds: number, language: Language = 'pl'): string 
   return formatDuration(seconds, language);
 }
 
+export function formatMapDelay(seconds: number, locale = 'pl-PL'): string {
+  const totalSeconds = Math.round(Math.abs(seconds));
+  const minutes = Math.floor(totalSeconds / 60);
+  const remainingSeconds = totalSeconds % 60;
+  const sign = totalSeconds === 0 ? '' : seconds < 0 ? '\u2212' : '+';
+  const parts: string[] = [];
+
+  if (minutes > 0) parts.push(`${minutes.toLocaleString(locale)} min`);
+  if (remainingSeconds > 0 || minutes === 0) parts.push(`${remainingSeconds} s`);
+
+  return sign + parts.join(' ');
+}
+
 export function formatCompactDelay(seconds: number): string {
   const totalSeconds = Math.abs(Math.round(seconds));
   const hours = Math.floor(totalSeconds / 3600);
