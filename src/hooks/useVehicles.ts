@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchVehiclePositions } from '../api/client';
 import { useI18n, type Language } from '../i18n-core';
@@ -34,11 +35,23 @@ async function fetchCachedVehiclePositions(language: Language): Promise<LiveVehi
 
 export function useVehicles() {
   const { language } = useI18n();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    // Expire displayed positions even when polling fails or is paused offline.
+    const interval = window.setInterval(() => setNow(Date.now()), POLLING_INTERVAL_MS);
+    return () => window.clearInterval(interval);
+  }, []);
 
   return useQuery({
     queryKey: ['vehicles', language],
     queryFn: () => fetchCachedVehiclePositions(language),
     refetchInterval: POLLING_INTERVAL_MS,
     staleTime: POLLING_INTERVAL_MS,
+    select: (data) => {
+      const vehicles = data.vehicles.filter((vehicle) =>
+        now - new Date(vehicle.timestamp).getTime() <= STALE_THRESHOLD_MS);
+      return { count: vehicles.length, vehicles };
+    },
   });
 }

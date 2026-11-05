@@ -28,7 +28,7 @@ interface LiveMapProps {
 }
 
 export default function LiveMap({ mobilePanel, onMobilePanelChange }: LiveMapProps) {
-  const { vehicles, isLoading, error } = useVehicleCache();
+  const { vehicles, isLoading, error, isPaused } = useVehicleCache();
   const { language, t } = useI18n();
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [activeLines, setActiveLines] = useState<Set<string>>(new Set());
@@ -101,7 +101,11 @@ export default function LiveMap({ mobilePanel, onMobilePanelChange }: LiveMapPro
     : isFiltering
       ? vehicles.filter((v) => activeLines.has(v.line_number))
       : vehicles;
-  const emptyErrorMessage = error && !vehicles.length ? getErrorMessage(error, language, t.map.apiConnectionError) : null;
+  const connectionErrorMessage = error || isPaused
+    ? vehicles.length
+      ? t.map.staleVehiclesWarning
+      : getErrorMessage(error, language, t.map.apiConnectionError)
+    : null;
 
   const currentSelected = selectedVehicle
     ? visibleVehicles.find((v) => v.license_plate === selectedVehicle.license_plate) ?? null
@@ -167,7 +171,7 @@ export default function LiveMap({ mobilePanel, onMobilePanelChange }: LiveMapPro
 
         <div className={`absolute bottom-4 left-4 z-[1000] max-w-[calc(100vw-2rem)] rounded-xl bg-surface/90 px-4 py-2 text-sm text-body backdrop-blur-sm transition-opacity ${filterOpen ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
           {isLoading && !vehicles.length && t.map.loadingVehicles}
-          {emptyErrorMessage && <span className="block max-w-sm text-negative">{emptyErrorMessage}</span>}
+          {connectionErrorMessage && <span role="status" className={`block max-w-sm ${vehicles.length ? 'text-warning' : 'text-negative'}`}>{connectionErrorMessage}</span>}
           {vehicles.length > 0 && (
             <span>
               <span className="font-bold text-ink">{visibleVehicles.length}</span>

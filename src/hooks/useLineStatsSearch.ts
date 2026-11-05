@@ -36,14 +36,15 @@ export function useLineStatsSearch() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!event.currentTarget.reportValidity() || !canSubmit) return;
+    if (!event.currentTarget.reportValidity() || !canSubmit) return null;
     const query = { ...state.draft, line: state.draft.line.trim() };
     if (!LINE_PATTERN.test(query.line)) {
       setState(current => ({ ...current, lineInvalid: true }));
-      return;
+      return null;
     }
     setState(current => ({ draft: query, query, lineInvalid: false, version: current.version + 1 }));
     replaceSearch(serializeStatsQuery(query));
+    return query;
   };
 
   return {

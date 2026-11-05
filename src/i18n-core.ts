@@ -30,6 +30,7 @@ const pl = {
   },
   map: {
     apiConnectionError: 'Błąd połączenia z API',
+    staleVehiclesWarning: 'Nie można odświeżyć pozycji. Widoczne pojazdy mogą być nieaktualne.',
     loadingVehicles: 'Ładowanie pojazdów...',
     vehicles: 'pojazdów',
   },
@@ -323,6 +324,7 @@ const en: Dictionary = {
   },
   map: {
     apiConnectionError: 'API connection error',
+    staleVehiclesWarning: 'Could not refresh positions. The vehicles shown may be out of date.',
     loadingVehicles: 'Loading vehicles...',
     vehicles: 'vehicles',
   },
