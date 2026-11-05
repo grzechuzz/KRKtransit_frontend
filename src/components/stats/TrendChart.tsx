@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { TrendResponse, TrendDay } from '../../types/api';
-import { formatCompactDelay, formatDelay } from './delayFormat';
+import { formatCompactDelay, formatSignedDelay } from './delayFormat';
 import { useI18n } from '../../i18n-core';
 
 interface TrendChartProps {
@@ -22,7 +22,7 @@ function getWeekdayIndex(dateStr: string): number {
 }
 
 function formatYLabel(seconds: number): string {
-  return formatCompactDelay(seconds);
+  return (seconds < 0 ? '\u2212' : '') + formatCompactDelay(seconds);
 }
 
 function aggregateByWeekday(days: TrendDay[], weekdayLabels: string[]): Bar[] {
@@ -78,18 +78,24 @@ export default function TrendChart({ data }: TrendChartProps) {
     );
   }
 
-  const maxValue = Math.max(...bars.map((b) => b.value), 1);
-  const rawCeiling = Math.ceil(maxValue / 60) * 60;
-  const ceilingSeconds = Math.max(rawCeiling + 60, Math.ceil((maxValue * 1.3) / 60) * 60) || 60;
+  const maxValue = Math.max(...bars.map((b) => b.value), 0);
+  const minValue = Math.min(...bars.map((b) => b.value), 0);
+  const stepSeconds = Math.max(60, Math.ceil(((maxValue - minValue) * 1.3) / (GRID_LINES * 60)) * 60);
+  const floorSeconds = Math.floor(minValue / stepSeconds) * stepSeconds;
+  const ceilingSeconds = Math.max(floorSeconds + stepSeconds, Math.ceil(maxValue / stepSeconds) * stepSeconds);
+  const rangeSeconds = ceilingSeconds - floorSeconds;
+  const zeroPct = (ceilingSeconds / rangeSeconds) * 100;
+  const ticks = Array.from({ length: Math.round(rangeSeconds / stepSeconds) + 1 }, (_, i) => ceilingSeconds - i * stepSeconds);
+  const highlightedBar = activeBar === null ? undefined : bars[activeBar];
 
   return (
     <div translate="no">
       <div className="relative rounded-lg border border-overlay/10 bg-surface p-3 sm:p-5">
-        {activeBar !== null && (
+        {highlightedBar && (
           <p className="pointer-events-none absolute top-2 left-1/2 z-10 max-w-[calc(100%-1rem)] -translate-x-1/2 rounded-lg bg-raised px-3 py-1 text-center text-xs shadow-sm ring-1 ring-overlay/10">
-            <span className="font-bold text-ink">{formatDelay(bars[activeBar].value, language)}</span>
+            <span className="font-bold text-ink">{formatSignedDelay(highlightedBar.value, language)}</span>
             <span className="mx-1.5 text-subtle">|</span>
-            <span className="text-muted">{t.trend.trips(bars[activeBar].trips.toLocaleString(locale))}</span>
+            <span className="text-muted">{t.trend.trips(highlightedBar.trips.toLocaleString(locale))}</span>
           </p>
         )}
         {/* Chart grid + bars */}
@@ -97,43 +103,45 @@ export default function TrendChart({ data }: TrendChartProps) {
 
           {/* Y-axis */}
           <div className="flex shrink-0 flex-col justify-between" style={{ height: CHART_HEIGHT }}>
-            {Array.from({ length: GRID_LINES + 1 }).map((_, i) => {
-              const val = ceilingSeconds - (i / GRID_LINES) * ceilingSeconds;
-              return (
-                <span key={i} className="text-right text-[9px] tabular-nums leading-none text-subtle sm:text-[11px]">
+            {ticks.map((val) => (
+                <span key={val} className="text-right text-[9px] tabular-nums leading-none text-subtle sm:text-[11px]">
                   {formatYLabel(val)}
                 </span>
-              );
-            })}
+            ))}
           </div>
 
           {/* Bars area */}
           <div className="relative flex-1" style={{ height: CHART_HEIGHT }}>
             {/* Grid lines */}
-            {Array.from({ length: GRID_LINES + 1 }).map((_, i) => (
+            {ticks.map((val) => (
               <div
-                key={i}
-                className="absolute left-0 right-0 h-px bg-overlay/5"
-                style={{ top: `${(i / GRID_LINES) * 100}%` }}
+                key={val}
+                className={`absolute left-0 right-0 h-px ${val === 0 ? 'bg-overlay/25' : 'bg-overlay/5'}`}
+                style={{ top: `${((ceilingSeconds - val) / rangeSeconds) * 100}%` }}
               />
             ))}
 
             {/* Bars */}
             <div className="relative flex h-full items-end gap-0.5 sm:gap-1">
               {bars.map((bar, i) => {
-                const heightPct = Math.max((bar.value / ceilingSeconds) * 100, 1);
+                const heightPct = (Math.abs(bar.value) / rangeSeconds) * 100;
                 return (
                   <div
                     key={i}
-                    className="flex min-w-0 flex-1 items-end justify-center"
+                    className="relative min-w-0 flex-1"
                     style={{ height: '100%' }}
                     onMouseEnter={() => setActiveBar(i)}
                     onMouseLeave={() => setActiveBar(null)}
                     onTouchStart={() => setActiveBar(i)}
                   >
                     <div
-                      className={`w-full rounded-t transition-colors ${activeBar === i ? 'bg-blue-400' : 'bg-blue-500'}`}
-                      style={{ height: `${heightPct}%`, minHeight: 2 }}
+                      className={`absolute w-full transition-colors ${bar.value < 0 ? 'rounded-b' : 'rounded-t'} ${activeBar === i ? 'bg-blue-400' : 'bg-blue-500'}`}
+                      style={{
+                        height: `${heightPct}%`,
+                        minHeight: bar.value === 0 ? 0 : 2,
+                        top: bar.value < 0 ? `${zeroPct}%` : undefined,
+                        bottom: bar.value >= 0 ? `${100 - zeroPct}%` : undefined,
+                      }}
                     />
                   </div>
                 );

@@ -9,7 +9,7 @@ const CATEGORIES = [
   {
     key: 'on_time',
     textColor: 'text-positive',
-    sublabel: '< 2 min',
+    sublabel: '≤ 2 min',
     color: '#22c55e',
     gradientFrom: 'from-green-500/20',
     gradientTo: 'to-green-500/5',

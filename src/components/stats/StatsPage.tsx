@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPunctuality, fetchMaxDelay, fetchRouteDelay, fetchTrend, getErrorMessage } from '../../api/client';
 import PunctualityRing from './PunctualityRing';
@@ -10,7 +11,7 @@ import LineStatsSearchFields from './LineStatsSearchFields';
 import LineSearchButton from './LineSearchButton';
 import SectionHeader from './SectionHeader';
 import { useLineStatsSearch } from '../../hooks/useLineStatsSearch';
-import { formatDateLabel } from '../../utils/lineStatsSearch';
+import { formatDateLabel, serializeStatsQuery } from '../../utils/lineStatsSearch';
 import { useI18n } from '../../i18n-core';
 
 function SectionLoading() {
@@ -128,6 +129,14 @@ export default function StatsPage() {
     retry: false,
   });
 
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    const submitted = search.handleSubmit(event);
+    if (!submitted || !query || serializeStatsQuery(submitted) !== serializeStatsQuery(query)) return;
+    for (const result of [punctuality, maxDelay, routeDelay, trend]) {
+      if (result.isError && !result.isFetching) void result.refetch();
+    }
+  };
+
   const isLoading = punctuality.isLoading || maxDelay.isLoading || routeDelay.isLoading || trend.isLoading;
   const firstError = punctuality.error || maxDelay.error || routeDelay.error || trend.error;
   const hasError = Boolean(firstError);
@@ -166,7 +175,7 @@ export default function StatsPage() {
 
         {/* Search stays above the results. */}
         <div className="flex min-h-[60vh] flex-col items-center justify-center">
-          <form onSubmit={search.handleSubmit} className="w-full max-w-lg">
+          <form onSubmit={submit} className="w-full max-w-lg">
             <div className="rounded-2xl border border-overlay/5 bg-gradient-to-b from-overlay/[0.04] to-transparent p-6 shadow-panel sm:p-10">
               <h1 className="mb-1 text-center text-2xl font-black uppercase tracking-wide text-ink sm:text-4xl">
                 {t.stats.title}
