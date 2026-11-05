@@ -1,24 +1,50 @@
 import { test, expect } from './fixtures';
 import { makeDelayMap } from '../tests/fixtures/delayMap';
+import type { Page } from '@playwright/test';
 
-const statsUrl = '/stats?line=304&from=2026-10-27&to=2026-11-02';
+const statsUrl = '/delay-map?line=304&from=2026-10-27&to=2026-11-02';
+
+async function selectBand(page: Page, band: string) {
+  await page.getByRole('combobox').click();
+  await page.getByRole('option').and(page.locator(`[data-value="${band}"]`)).click();
+}
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('krk-transit-language', 'pl'));
+});
+
+test('mouse can inspect a segment just outside the visible stop', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Checks mouse precision; touch retains larger targets.');
+  await page.goto(statsUrl);
+  const stops = page.locator('.delay-map-stop-hit');
+  await expect(stops).toHaveCount(4);
+  await page.locator('.leaflet-container').scrollIntoViewIfNeeded();
+  const first = (await stops.nth(0).boundingBox())!;
+  const second = (await stops.nth(1).boundingBox())!;
+  const x = first.x + first.width / 2;
+  const y = first.y + first.height / 2;
+  const dx = second.x + second.width / 2 - x;
+  const dy = second.y + second.height / 2 - y;
+  const distance = Math.hypot(dx, dy);
+  await page.mouse.move(x, y);
+  await expect(page.locator('.leaflet-tooltip')).toHaveText('Przystanek A 01');
+  await page.mouse.move(x + dx / distance * 12, y + dy / distance * 12);
+  await expect(page.locator('.leaflet-tooltip')).toHaveCount(1);
+  await expect(page.locator('.leaflet-tooltip')).toContainText('90. percentyl');
 });
 
 for (const theme of ['light', 'dark']) {
   test(`renders measured end segments, local filters and tooltips in ${theme}`, async ({ page, apiRequests }, info) => {
     await page.addInitScript(value => localStorage.setItem('krk-transit-theme', value), theme);
     await page.goto(statsUrl);
-    const section = page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true });
+    const section = page.getByRole('region', { name: 'Mapa opóźnień', exact: true });
     const segments = section.locator('.delay-map-segment');
     await expect(segments).toHaveCount(3);
-    await expect(segments.nth(0)).toHaveAttribute('stroke', '#16a34a');
+    await expect(segments.nth(0)).toHaveAttribute('stroke', '#059669');
     await expect(segments.nth(1)).toHaveAttribute('stroke', '#eab308');
-    await expect(segments.nth(2)).toHaveAttribute('stroke', '#9ca3af');
+    await expect(segments.nth(2)).toHaveAttribute('stroke', '#94a3b8');
     await expect(section.locator('.delay-map-stop-hit')).toHaveCount(4);
-    await expect.poll(() => apiRequests.filter(url => url.includes('/stats/')).length).toBe(5);
+    await expect.poll(() => apiRequests.filter(url => url.includes('/stats/')).length).toBe(1);
     expect(apiRequests.find(url => url.includes('/delay-map'))).toContain('include_estimated=false');
     await section.scrollIntoViewIfNeeded();
     const hit = section.locator('.delay-map-hit').first();
@@ -26,8 +52,8 @@ for (const theme of ['light', 'dark']) {
     else await hit.hover();
     const tooltip = section.locator('.leaflet-tooltip');
     await expect(tooltip).toContainText('Przystanek A (01)');
-    await expect(tooltip).toContainText('-10,5 s');
-    await expect(tooltip).toContainText('+1,2 s');
+    await expect(tooltip).toContainText('−11 s');
+    await expect(tooltip).toContainText('+1 s');
     await expect(tooltip).toContainText('90. percentyl');
     const mapBounds = (await section.locator('.leaflet-container').boundingBox())!;
     await expect.poll(async () => {
@@ -44,24 +70,24 @@ for (const theme of ['light', 'dark']) {
     await expect(tooltip).toHaveCount(0);
     const geometry = await segments.first().getAttribute('d');
     for (const band of ['MORNING', 'MIDDAY', 'AFTERNOON', 'EVENING_NIGHT', 'WEEKEND', 'ALL_DAY']) {
-      await section.getByRole('combobox').selectOption(band);
+      await selectBand(page, band);
     }
     await expect(segments.first()).toHaveAttribute('d', geometry!);
-    await section.getByRole('combobox').selectOption('MORNING');
-    await expect(segments.nth(1)).toHaveAttribute('stroke', '#16a34a');
-    await section.getByRole('button', { name: 'Kierunek 2 · Przystanek D' }).click();
+    await selectBand(page, 'MORNING');
+    await expect(segments.nth(1)).toHaveAttribute('stroke', '#059669');
+    await section.getByRole('button', { name: 'Przystanek D', exact: true }).nth(1).click();
     await expect(segments).toHaveCount(1);
-    await expect(section.getByRole('combobox')).toHaveValue('MORNING');
+    await expect(section.getByRole('combobox')).toHaveAttribute('data-value', 'MORNING');
     await expect(section.getByRole('status')).toContainText('Brak pomiarów');
     await section.getByRole('button', { name: 'Kierunek 3', exact: true }).click();
     await expect(segments).toHaveCount(1);
     await expect(section.locator('.leaflet-control-zoom')).toBeVisible();
-    expect(apiRequests.filter(url => url.includes('/stats/'))).toHaveLength(5);
+    expect(apiRequests.filter(url => url.includes('/stats/'))).toHaveLength(1);
     expect(apiRequests.some(url => /\/shapes\/|\/trips\//.test(url))).toBe(false);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.getByRole('button', { name: 'Szukaj', exact: true }).click();
-    await expect(section.getByRole('button', { name: 'Kierunek 1 · Przystanek D' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(section.getByRole('combobox')).toHaveValue('ALL_DAY');
+    await expect(section.getByRole('button', { name: 'Przystanek D', exact: true }).first()).toHaveAttribute('aria-pressed', 'true');
+    await expect(section.getByRole('combobox')).toHaveAttribute('data-value', 'ALL_DAY');
   });
 }
 
@@ -73,10 +99,11 @@ test('loads independently, zooms with the mouse wheel and pans with a finger', a
     await route.fulfill({ json: makeDelayMap() });
   });
   await page.goto(statsUrl);
-  const section = page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true });
-  await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeVisible();
+  const section = page.getByRole('region', { name: 'Mapa opóźnień', exact: true });
+  await expect(page.getByRole('heading', { name: 'Mapa opóźnień', exact: true })).toBeVisible();
   await expect(section.getByRole('status')).toContainText('Ładowanie');
-  await expect(page.getByRole('button', { name: 'Szukaj', exact: true })).toHaveAttribute('aria-busy', 'false');
+  await section.getByRole('status').screenshot({ path: info.outputPath('map-loading.png') });
+  await expect(page.getByRole('button', { name: 'Szukaj', exact: true })).toHaveAttribute('aria-busy', 'true');
   release();
   await expect(section.locator('.delay-map-segment')).toHaveCount(3);
   await section.scrollIntoViewIfNeeded();
@@ -106,13 +133,13 @@ test('loads independently, zooms with the mouse wheel and pans with a finger', a
   }
 });
 
-test('shows a usable map when every other statistic fails', async ({ page }) => {
+test('loads the map without requesting other statistics', async ({ page }) => {
   await page.route('**/stats/*?*', async route => {
     if (route.request().url().includes('/delay-map?')) return route.fallback();
     await route.fulfill({ status: 503, json: { error_code: 'EXTERNAL_SERVICE_ERROR', message: 'Statistics service is busy' } });
   });
   await page.goto(statsUrl);
-  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCount(0);
   await expect(page.locator('.delay-map-segment')).toHaveCount(3);
   await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeHidden();
 });
@@ -122,14 +149,14 @@ test('distinguishes no route, no measurements and an unmeasured band', async ({ 
   data.directions = [];
   await page.route('**/stats/delay-map?*', route => route.fulfill({ json: data }));
   await page.goto(statsUrl);
-  const section = page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true });
+  const section = page.getByRole('region', { name: 'Mapa opóźnień', exact: true });
   await expect(section.getByRole('status')).toContainText('Brak aktualnej trasy');
   data.directions = makeDelayMap().directions;
   data.directions.forEach(direction => direction.segments.forEach(segment => { segment.delays = []; }));
   await page.reload();
   await expect(section.locator('.delay-map-segment')).toHaveCount(3);
   await expect(section.getByRole('status')).toContainText('Brak pomiarów');
-  for (const segment of await section.locator('.delay-map-segment').all()) await expect(segment).toHaveAttribute('stroke', '#9ca3af');
+  for (const segment of await section.locator('.delay-map-segment').all()) await expect(segment).toHaveAttribute('stroke', '#94a3b8');
 });
 
 for (const [status, body, message] of [
@@ -142,13 +169,13 @@ for (const [status, body, message] of [
   [503, { error_code: 'EXTERNAL_SERVICE_ERROR' }, 'zależnym serwisem'],
   [500, { error_code: 'INTERNAL_ERROR' }, 'Wewnętrzny błąd'],
 ] as const) {
-  test(`handles HTTP ${status} (${JSON.stringify(body)}) without hiding other results`, async ({ page }) => {
+  test(`handles HTTP ${status} (${JSON.stringify(body)}) on the dedicated page`, async ({ page }) => {
     await page.route('**/stats/delay-map?*', route => route.fulfill({ status, json: body }));
     await page.goto(statsUrl);
-    const section = page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true });
+    const section = page.getByRole('region', { name: 'Mapa opóźnień', exact: true });
     await expect(section).toContainText(message);
     await expect(section.locator('.leaflet-container')).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Punktualność', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mapa opóźnień', exact: true })).toBeVisible();
   });
 }
 
@@ -156,9 +183,12 @@ test('supports English, a narrow viewport, and changing the theme without a requ
   await page.setViewportSize({ width: 320, height: 740 });
   await page.addInitScript(() => localStorage.setItem('krk-transit-language', 'en'));
   await page.goto(statsUrl);
-  const section = page.getByRole('region', { name: 'Delay growth map', exact: true });
+  const section = page.getByRole('region', { name: 'Delay map', exact: true });
   await expect(section.getByLabel('Time band')).toBeVisible();
+  await section.getByRole('combobox').click();
   await expect(section.getByRole('option')).toHaveCount(6);
+  await page.keyboard.press('Escape');
+  await section.getByRole('button', { name: 'Legend', exact: true }).click();
   await expect(section).toContainText('Average delay growth');
   await page.getByRole('button', { name: /Switch to .* theme/ }).click();
   await expect(section.locator('.delay-map-segment')).toHaveCount(3);
@@ -180,13 +210,13 @@ test('a late response cannot replace a newer search', async ({ page }) => {
   await page.goto(statsUrl);
   await page.getByLabel('Numer linii', { exact: true }).fill('139');
   await page.getByRole('button', { name: 'Szukaj', exact: true }).click();
-  const direction = page.getByRole('button', { name: 'Kierunek 1 · Nowa trasa' });
+  const direction = page.getByRole('button', { name: 'Nowa trasa', exact: true });
   await expect(direction).toBeVisible();
   const oldResponse = page.waitForResponse(response => response.url().includes('/304/stats/delay-map'));
   release();
   await oldResponse;
   await expect(direction).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Kierunek 1 · Przystanek D' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Przystanek D', exact: true })).toHaveCount(1);
 });
 
 test('a failed map can be retried by submitting the same search', async ({ page }) => {
@@ -198,7 +228,7 @@ test('a failed map can be retried by submitting the same search', async ({ page 
       : route.fulfill({ json: makeDelayMap() });
   });
   await page.goto(statsUrl);
-  const section = page.getByRole('region', { name: 'Mapa przyrostu opóźnień', exact: true });
+  const section = page.getByRole('region', { name: 'Mapa opóźnień', exact: true });
   await expect(section).toContainText('Nie udało się połączyć');
   expect(calls).toBe(1);
   await page.getByRole('button', { name: 'Szukaj', exact: true }).click();
@@ -213,6 +243,6 @@ test('keeps the route usable with a single-point segment returned by the deploye
   await page.goto(statsUrl);
   await expect(page.locator('.delay-map-segment')).toHaveCount(3);
   await expect(page.locator('.delay-map-stop-hit')).toHaveCount(4);
-  await page.getByRole('combobox').selectOption('MORNING');
-  await expect(page.locator('.delay-map-segment').nth(1)).toHaveAttribute('stroke', '#16a34a');
+  await selectBand(page, 'MORNING');
+  await expect(page.locator('.delay-map-segment').nth(1)).toHaveAttribute('stroke', '#059669');
 });

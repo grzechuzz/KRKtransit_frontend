@@ -3,9 +3,9 @@ import { delayMapColor, NO_MEASUREMENTS_COLOR } from '../src/components/stats/de
 
 describe('delay growth colors', () => {
   it.each([
-    [-180, '#16a34a'], [0, '#16a34a'], [10, '#16a34a'],
-    [10.1, '#eab308'], [30, '#eab308'], [30.1, '#f97316'],
-    [60, '#f97316'], [60.1, '#dc2626'], [120, '#dc2626'], [120.1, '#9f1239'],
+    [-180, '#059669'], [0, '#059669'], [15, '#059669'],
+    [15.1, '#eab308'], [45, '#eab308'], [45.1, '#f97316'],
+    [90, '#f97316'], [90.1, '#e11d48'], [180, '#e11d48'], [180.1, '#7c3aed'],
   ])('colors an average of %s seconds as %s', (mean, color) => {
     expect(delayMapColor(mean)).toBe(color);
   });

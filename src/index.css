@@ -14,6 +14,7 @@
   --app-muted: #9ca3af;
   --app-subtle: #8994a6;
   --app-overlay: #ffffff;
+  --app-field: color-mix(in srgb, var(--app-overlay) 5%, var(--app-canvas));
   --app-accent: #60a5fa;
   --app-accent-strong: #93c5fd;
   --app-positive: #4ade80;
@@ -57,6 +58,7 @@
   --color-muted: var(--app-muted);
   --color-subtle: var(--app-subtle);
   --color-overlay: var(--app-overlay);
+  --color-field: var(--app-field);
   --color-accent: var(--app-accent);
   --color-accent-strong: var(--app-accent-strong);
   --color-positive: var(--app-positive);
@@ -84,6 +86,20 @@ html, body, #root {
 :focus-visible {
   outline: 2px solid var(--app-accent);
   outline-offset: 3px;
+}
+
+.delay-map-promo-route {
+  transition: filter 180ms ease;
+}
+
+.delay-map-promo:is(:hover, :focus-within) .delay-map-promo-route {
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--app-accent) 30%, transparent));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .delay-map-promo-route {
+    transition: none;
+  }
 }
 
 #stats-results:focus {
@@ -155,16 +171,30 @@ input[type="date"]::-webkit-date-and-time-value {
 }
 
 .stats-delay-map .delay-map-tooltip {
-  width: 19rem;
-  max-width: min(19rem, calc(100vw - 4rem));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  width: 16rem;
+  max-width: min(16rem, calc(100vw - 4rem));
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: var(--app-panel-shadow);
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
-.stats-delay-map .leaflet-control-zoom a {
-  width: 44px;
-  height: 44px;
-  line-height: 44px;
+@media (min-width: 640px) {
+  .stats-delay-map .delay-map-tooltip {
+    width: 20rem;
+    max-width: min(20rem, calc(100vw - 4rem));
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+}
+
+.stats-delay-map .delay-map-stop-tooltip {
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 4rem));
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 @media (hover: none) and (pointer: coarse) {

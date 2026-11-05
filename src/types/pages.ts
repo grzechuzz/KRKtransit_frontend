@@ -1,1 +1,1 @@
-export type Page = 'home' | 'map' | 'stats' | 'info';
+export type Page = 'home' | 'map' | 'stats' | 'delayMap' | 'info';

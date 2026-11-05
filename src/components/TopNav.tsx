@@ -2,10 +2,11 @@ import { useState } from 'react';
 import type { Page } from '../types/pages';
 import { useI18n, type Language } from '../i18n-core';
 import { useTheme } from '../theme-core';
+import { isValidStatsQuery, localDateStr, readStatsUrl, serializeStatsQuery } from '../utils/lineStatsSearch';
 
 interface TopNavProps {
   currentPage: Page;
-  onNavigate: (page: Page) => void;
+  onNavigate: (page: Page, search?: string) => void;
   mobileMenuOpen: boolean;
   onMobileMenuChange: (open: boolean) => void;
 }
@@ -19,11 +20,13 @@ export default function TopNav({ currentPage, onNavigate, mobileMenuOpen, onMobi
   const navItems: { page: Page; label: string }[] = [
     { page: 'map', label: t.nav.map },
     { page: 'stats', label: t.nav.stats },
+    { page: 'delayMap', label: t.nav.delayMap },
     { page: 'info', label: t.nav.info },
   ];
 
   const handleNavigate = (page: Page) => {
-    onNavigate(page);
+    const query = currentPage === 'stats' && page === 'delayMap' ? readStatsUrl(localDateStr(new Date())) : null;
+    onNavigate(page, query && isValidStatsQuery(query) ? serializeStatsQuery(query) : undefined);
     onMobileMenuChange(false);
     setLanguageMenuOpen(false);
   };
@@ -42,7 +45,7 @@ export default function TopNav({ currentPage, onNavigate, mobileMenuOpen, onMobi
             setLanguageMenuOpen(false);
             onMobileMenuChange(!mobileMenuOpen);
           }}
-          className="mr-2 flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink transition-colors hover:bg-overlay/5 min-[820px]:hidden"
+          className="mr-2 flex h-11 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-ink transition-colors hover:bg-overlay/5 min-[1100px]:hidden"
           aria-label="Menu"
           aria-expanded={mobileMenuOpen}
         >
@@ -58,7 +61,7 @@ export default function TopNav({ currentPage, onNavigate, mobileMenuOpen, onMobi
         {/* Brand — click goes to home */}
         <button
           onClick={() => handleNavigate('home')}
-          className="min-w-0 flex-1 cursor-pointer text-left min-[820px]:mr-5 min-[820px]:flex-none"
+          className="min-w-0 flex-1 cursor-pointer text-left min-[1100px]:mr-5 min-[1100px]:flex-none"
         >
           <span className="whitespace-nowrap text-base font-black uppercase tracking-wide text-ink min-[380px]:text-xl lg:text-2xl">
             KRK
@@ -67,11 +70,12 @@ export default function TopNav({ currentPage, onNavigate, mobileMenuOpen, onMobi
         </button>
 
         {/* Desktop navigation - skewed buttons */}
-        <nav className="hidden items-center gap-1 min-[820px]:flex">
+        <nav className="hidden items-center gap-1 min-[1100px]:flex">
           {navItems.map(({ page, label }) => {
             const active = currentPage === page;
             return (
               <button
+                aria-current={active ? 'page' : undefined}
                 key={page}
                 onClick={() => handleNavigate(page)}
                 className={`w-40 -skew-x-12 cursor-pointer rounded-sm py-2 text-center text-sm font-bold tracking-widest transition-colors ${
@@ -101,7 +105,7 @@ export default function TopNav({ currentPage, onNavigate, mobileMenuOpen, onMobi
               </svg>
             ) : (
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.9 13.1A9 9 0 0 1 10.9 3.1 9 9 0 1 0 20.9 13.1Z" />
+                <path d="M9.1 3.3a9 9 0 1 0 11.6 11.6 9 9 0 0 1-11.6-11.6Z" />
               </svg>
             )}
           </button>
@@ -157,11 +161,12 @@ export default function TopNav({ currentPage, onNavigate, mobileMenuOpen, onMobi
 
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-overlay/5 bg-canvas px-3 py-2 min-[820px]:hidden">
+        <nav className="flex flex-col gap-1 border-t border-overlay/5 bg-canvas px-3 py-2 min-[1100px]:hidden">
           {navItems.map(({ page, label }) => {
             const active = currentPage === page;
             return (
               <button
+                aria-current={active ? 'page' : undefined}
                 key={page}
                 onClick={() => handleNavigate(page)}
                 className={`w-full -skew-x-12 cursor-pointer rounded-sm py-2.5 text-center text-sm font-bold tracking-widest transition-colors ${

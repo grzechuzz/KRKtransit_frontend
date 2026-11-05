@@ -5,6 +5,7 @@ const PATHS: Record<Page, string> = {
   home: '/',
   map: '/map',
   stats: '/stats',
+  delayMap: '/delay-map',
   info: '/about',
 };
 
@@ -14,6 +15,7 @@ function getPage(): Page {
   switch (window.location.pathname.replace(/\/+$/, '')) {
     case '/map': return 'map';
     case '/stats': return 'stats';
+    case '/delay-map': return 'delayMap';
     case '/about':
     case '/info': return 'info';
     default: return 'home';
@@ -29,12 +31,22 @@ function subscribe(onChange: () => void) {
   };
 }
 
-function navigate(page: Page) {
-  window.history.pushState(null, '', PATHS[page]);
+export function replaceSearch(search: string) {
+  window.history.replaceState(null, '', `${window.location.pathname}?${search}`);
   listeners.forEach((listener) => listener());
 }
 
+function navigate(page: Page, search = '') {
+  window.history.pushState(null, '', PATHS[page] + (search ? `?${search}` : ''));
+  // Notify form subscribers too, including navigation within the same page.
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+function getLocation() {
+  return window.location.pathname + window.location.search;
+}
+
 export function usePageNavigation() {
-  const page = useSyncExternalStore<Page>(subscribe, getPage, () => 'home');
-  return { page, navigate };
+  useSyncExternalStore(subscribe, getLocation, () => '/');
+  return { page: getPage(), navigate };
 }
